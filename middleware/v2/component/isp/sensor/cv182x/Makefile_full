@@ -1,0 +1,50 @@
+SHELL = /bin/bash
+
+ifeq ($(PARAM_FILE), )
+PARAM_FILE=../../../../../$(shell echo $(MW_VER))/Makefile.param
+include $(PARAM_FILE)
+endif
+include ../../sensor.mk
+
+ifeq ($(sensor-y),)
+SRCS =
+else
+SRCS = $(shell find $(sensor-y) -name '*.c')
+endif
+
+# SRCS = $(shell find $(sensor-y) -name '*.c')
+OBJS = $(SRCS:.c=.o)
+
+TARGET_A = $(MW_LIB)/libsns_full.a
+TARGET_SO = $(MW_LIB)/libsns_full.so
+
+EXTRA_LDFLAGS =
+
+.PHONY : clean all
+
+ifeq ($(SRCS),)
+# 如果没有源文件，创建空库
+all:
+	@echo "No sensors enabled, creating empty libraries"
+	@mkdir -p $(MW_LIB)
+	@$(AR) $(ARFLAGS) $(TARGET_A)
+	@echo -e $(YELLOW)[LINK]$(END)[$(notdir $(AR))] $(notdir $(TARGET_A))
+	@echo "/* Empty library */" > empty.c
+	@$(CC) $(CFLAGS) -c empty.c -o empty.o
+	@$(LD) $(LDFLAGS) $(EXTRA_LDFLAGS) -shared -o $(TARGET_SO) empty.o
+	@echo -e $(GREEN)[LINK]$(END)[$(notdir $(LD))] $(notdir $(TARGET_SO))
+	@rm -f empty.c empty.o
+else
+all : $(TARGET_A) $(TARGET_SO)
+endif
+
+$(TARGET_A): $(OBJS)
+	@$(AR) $(ARFLAGS) $@ $(OBJS)
+	@echo -e $(YELLOW)[LINK]$(END)[$(notdir $(AR))] $(notdir $@)
+
+$(TARGET_SO): $(OBJS)
+	@$(LD) $(LDFLAGS) $(EXTRA_LDFLAGS) -shared -o $@ --start-group $(OBJS) --end-group
+	@echo -e $(GREEN)[LINK]$(END)[$(notdir $(LD))] $(notdir $@)
+
+clean:
+	@rm -f $(TARGET_A) $(TARGET_SO) empty.c empty.o

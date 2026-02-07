@@ -1,0 +1,37 @@
+#!/bin/sh
+
+if [ "$1" = "start" ]
+then
+	. /etc/profile
+	panel_value=""
+	if [ -e /boot/board ]
+	then
+		panel_value=$(grep '^panel=' /boot/board | cut -d '=' -f 2)
+	elif [ -e /boot/uEnv.txt ]
+	then
+		panel_value=$(grep '^panel=' /boot/uEnv.txt | cut -d '=' -f 2)
+	fi
+	
+	if [ "$panel_value" = "st7701_lct024bsi20" ] # MaixCAM-Pro
+	then
+		echo "load cst7xx touchscreen driver"
+		insmod /mnt/system/ko/hynitron_touch_new.ko
+	elif [ "$panel_value" = "st7701_hd228001c31" ] # MaixCAM
+	then
+		echo "load cst3xx touchscreen driver"
+		insmod /mnt/system/ko/hynitron_touch.ko
+	elif [ "$panel_value" = "mtd700920b" ] # 7-inch touchscreen
+	then
+		echo "load gt9xx touchscreen driver"
+		insmod /mnt/system/ko/3rd/gt9xx.ko
+	elif [ "$panel_value" = "gc9a01_240x240" ] # GC9A01 240x240 SPI screen with CST816T touch
+	then
+		echo "load CST816T touchscreen driver for GC9A01"
+		insmod /mnt/system/ko/hynitron_touch_new.ko
+	else
+		# 默认加载CST816T驱动，适用于GC9A01等SPI屏幕
+		echo "load default CST816T touchscreen driver"
+		insmod /mnt/system/ko/hynitron_touch_new.ko
+	fi
+	exit 0
+fi

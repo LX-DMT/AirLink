@@ -1,0 +1,31 @@
+
+#####################
+# files to boot a minimal system
+
+dir /dev 755 0 0
+dir /dev/shm 755 0 0
+dir /dev/pts 755 0 0
+nod /dev/console 644 0 0 c 5 1
+
+file /init ../target/init 775 0 0
+file /busybox ../target/busybox 775 0 0
+file /e2fsck ../target/e2fsck 775 0 0
+file /resize2fs ../target/resize2fs 775 0 0
+file /parted ../target/parted 775 0 0
+file /libc.so ../target/libc.so 775 0 0
+
+dir /proc 755 0 0
+dir /sys 755 0 0
+
+slink /sh /busybox 755 0 0
+slink /mount /busybox 755 0 0
+slink /ls /busybox 755 0 0
+slink /mkdir /busybox 755 0 0
+slink /sync /busybox 755 0 0
+slink /ln /busybox 755 0 0
+slink /cat /busybox 755 0 0
+slink /switch_root /busybox 755 0 0
+slink /grep /busybox 755 0 0
+slink /wc /busybox 755 0 0
+slink /umount /busybox 755 0 0
+slink /sleep /busybox 755 0 0

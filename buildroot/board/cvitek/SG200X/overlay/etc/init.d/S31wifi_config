@@ -1,0 +1,63 @@
+#!/bin/sh
+
+DAEMON_BIN="/usr/bin/python3"
+DAEMON_ARGS="-u /usr/bin/wifi_config_web.py"
+PIDFILE="/var/run/wifi_config_web.pid"
+DNSMASQ_PIDFILE="/var/run/dnsmasq_wifi.pid"
+
+start() {
+    if [ -e /boot/wifi.ap ]; then
+        echo "Starting WiFi configuration web server..."
+        # Redirect output to /dev/console to ensure it shows up on serial terminal
+        start-stop-daemon -S -b -m -p $PIDFILE -x $DAEMON_BIN -- $DAEMON_ARGS > /dev/console 2>&1
+        
+        # Wait for wlan0 and setup dnsmasq in the background to avoid blocking
+        (
+            RETRY=0
+            MAX_RETRIES=15
+            while [ $RETRY -lt $MAX_RETRIES ]; do
+                WLAN0_IP=$(ip addr show wlan0 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
+                if [ ! -z "$WLAN0_IP" ]; then
+                    echo "Configuring dnsmasq for captive portal on $WLAN0_IP..." > /dev/console
+                    dnsmasq --no-dhcp-interface= --address=/#/$WLAN0_IP --interface=wlan0 --bind-interfaces --pid-file=$DNSMASQ_PIDFILE --no-resolv --no-hosts
+                    break
+                fi
+                sleep 1
+                RETRY=$((RETRY + 1))
+            done
+            if [ $RETRY -eq $MAX_RETRIES ]; then
+                echo "Failed to get wlan0 IP for dnsmasq" > /dev/console
+            fi
+        ) &
+    else
+        echo "Not in AP mode, skipping WiFi configuration web server."
+    fi
+}
+
+stop() {
+    echo "Stopping WiFi configuration web server..."
+    start-stop-daemon -K -p $PIDFILE
+    [ -e $PIDFILE ] && rm -f $PIDFILE
+    
+    echo "Stopping dnsmasq for captive portal..."
+    if [ -e $DNSMASQ_PIDFILE ]; then
+        kill $(cat $DNSMASQ_PIDFILE)
+        rm -f $DNSMASQ_PIDFILE
+    fi
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac

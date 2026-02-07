@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+# Start vhusbdriscv64
+#
+
+NAME=vhusbdriscv64
+DAEMON=/usr/bin/vhusbdriscv64
+PIDFILE=/var/run/vhusbdriscv64.pid
+
+start() {
+    printf "Starting $NAME: "
+    
+    # Check if the daemon exists
+    if [ ! -x "$DAEMON" ]; then
+        echo "daemon not found or not executable"
+        return 1
+    fi
+    
+    # Start the daemon in background
+    start-stop-daemon -S -b -q -m -p $PIDFILE --exec $DAEMON
+    echo "OK"
+}
+
+stop() {
+    printf "Stopping $NAME: "
+    start-stop-daemon -K -q -p $PIDFILE
+    rm -f $PIDFILE
+    echo "OK"
+}
+
+restart() {
+    stop
+    start
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart|reload)
+        restart
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit 0

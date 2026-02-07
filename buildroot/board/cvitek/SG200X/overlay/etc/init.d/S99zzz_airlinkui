@@ -1,0 +1,63 @@
+#!/bin/sh
+#
+# Start AirLinkUiApp
+#
+
+DAEMON=/usr/bin/AirLinkUiApp
+NAME=AirLinkUiApp
+
+# Load profile
+if [ -f /etc/profile ]; then
+    . /etc/profile
+fi
+
+# Set LVGL environment variables
+export LV_LINUX_FBDEV=/dev/fb0
+
+case "$1" in
+  start)
+    echo "Starting $NAME..."
+    # Disable kernel logs on console (keep KERN_EMERG)
+    echo 0 > /proc/sys/kernel/printk
+    # Hide cursor on tty1 (framebuffer console)
+    if [ -c /dev/tty1 ]; then
+        echo -e "\033[?25l" > /dev/tty1
+    fi
+
+    if [ -f $DAEMON ]; then
+        echo "Found $DAEMON, executing ..."
+        # Run in a subshell to ensure it doesn't block init
+        (
+            # sleep 5
+            # Redirect stdin from /dev/null, stdout/stderr to /dev/null to prevent console blocking
+            # Use setsid if available to detach from controlling TTY
+            if command -v setsid >/dev/null 2>&1; then
+                setsid $DAEMON < /dev/null > /dev/null 2>&1
+            else
+                $DAEMON < /dev/null > /dev/null 2>&1
+            fi
+        ) &
+    else
+        echo "$DAEMON not found"
+    fi
+    ;;
+  stop)
+    echo "Stopping $NAME..."
+    killall $NAME
+    # Restore kernel logs on console
+    echo "7 4 1 7" > /proc/sys/kernel/printk
+    # Show cursor on tty1
+    if [ -c /dev/tty1 ]; then
+        echo -e "\033[?25h" > /dev/tty1
+    fi
+    ;;
+  restart|reload)
+    "$0" stop
+    "$0" start
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart}"
+    exit 1
+esac
+
+exit $?

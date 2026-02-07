@@ -1,0 +1,314 @@
+/dts-v1/;
+#include "soph_base_riscv.dtsi"
+#include "soph_asic_qfn.dtsi"
+#include "soph_asic_sd.dtsi"
+#include "soph_default_memmap.dtsi"
+
+#include <dt-bindings/input/linux-event-codes.h>
+#include <dt-bindings/gpio/gpio.h>
+
+&i2c0 {
+        status = "disabled";
+        /delete-property/ scl-pinmux;
+        /delete-property/ sda-pinmux;
+        /delete-property/ scl-gpios;
+        /delete-property/ sda-gpios;
+};
+
+&i2c1 {
+        status = "disabled";
+        /delete-property/ scl-pinmux;
+        /delete-property/ sda-pinmux;
+        /delete-property/ scl-gpios;
+        /delete-property/ sda-gpios;
+};
+
+&i2c2 {
+        /*
+        status = "disabled";
+        /delete-property/ scl-pinmux;
+        /delete-property/ sda-pinmux;
+        /delete-property/ scl-gpios;
+        /delete-property/ sda-gpios;
+        */
+        status = "okay";
+        hynitron: hynitron@15 {
+                compatible = "hyn,8xxt";
+                reg = <0x15>;
+                irq-gpio = <&porte 19 0>;
+                reset-gpio = <&porte 4 0>;
+                max-touch-number = <5>;
+                display-coords = <0 0 240 240>;
+                pos-swap = <1>;
+                posx-reverse = <0>;
+                posy-reverse = <1>;
+                status = "okay";
+        };
+};
+
+&i2c3 {
+        status = "disabled";
+        /delete-property/ scl-pinmux;
+        /delete-property/ sda-pinmux;
+        /delete-property/ scl-gpios;
+        /delete-property/ sda-gpios;
+};
+
+&i2c4 {
+        status = "disabled";
+        /delete-property/ scl-pinmux;
+        /delete-property/ sda-pinmux;
+        /delete-property/ scl-gpios;
+        /delete-property/ sda-gpios;
+
+        /*
+        scl-pinmux = <0x03001090 0x5 0x3>;
+        sda-pinmux = <0x03001098 0x5 0x3>;
+        scl-gpios = <&porte 6 GPIO_ACTIVE_HIGH>;
+        sda-gpios = <&porte 8 GPIO_ACTIVE_HIGH>;
+
+        clock-frequency = <400000>;
+        
+        status = "okay";
+
+        hynitron: hynitron@15 {
+                compatible = "hyn,8xxt";
+                reg = <0x15>;
+                irq-gpio = <&porte 3 0>;
+                reset-gpio = <&porte 4 0>;
+                max-touch-number = <5>;
+                display-coords = <0 0 240 240>;
+                pos-swap = <1>;
+                posx-reverse = <0>;
+                posy-reverse = <1>;
+                status = "okay";
+        };
+        */
+};
+
+&sd {
+        min-frequency = <400000>; // 400Khz
+        //max-frequency = <50000000>; // 50Mhz
+        max-frequency = <25000000>; // 25Mhz
+        //max-frequency = <10000000>; // 10Mhz
+        //max-frequency = <5000000>; // 5Mhz
+};
+
+&cvi_vo {
+        status = "disabled";
+};
+
+&mipi_tx {
+        status = "disabled";
+};
+
+&uart0 {
+	clocks = <&clk CV181X_CLK_UART0>;
+	/delete-property/ clock-frequency;
+};
+
+&uart1 {
+        clocks = <&clk CV181X_CLK_UART1>;
+        /delete-property/ clock-frequency;
+        status = "disabled";
+};
+
+&uart2 {
+        clocks = <&clk CV181X_CLK_UART2>;
+        /delete-property/ clock-frequency;
+        status = "disabled";
+};
+
+&uart3 {
+        clocks = <&clk CV181X_CLK_UART3>;
+        /delete-property/ clock-frequency;
+	status = "disabled";
+};
+
+&pwm0 {
+        status = "okay";
+};
+
+&pwm1 {
+      status = "okay";
+};
+
+&pwm2 {
+      status = "okay";
+};
+
+&spi0 {
+        status = "disabled";
+};
+
+&spi1 {
+        status = "disabled";
+        /*
+        /delete-node/ spidev@0;
+        gc9a01: gc9a01@0 {
+                compatible = "galaxycore,gc9a01";
+                reg = <0>;
+                status = "okay";
+                spi-max-frequency = <32000000>;
+                spi-cpol;
+                spi-cpha;
+                rotate = <270>;
+                fps = <30>;
+                txbuflen = <131072>; // 128KB
+                bgr;
+                buswidth = <8>;
+                width = <240>;
+                height = <240>;
+
+                reset = <&porta 27 GPIO_ACTIVE_HIGH>;
+                dc = <&porta 15 GPIO_ACTIVE_HIGH>;
+
+                debug = <0x0>;
+        };
+        */
+};
+
+&spi2 {
+	status = "okay";
+        /delete-node/ spidev@0;
+        gc9a01: gc9a01@0 {
+                compatible = "galaxycore,gc9a01";
+                reg = <0>;
+                status = "okay";
+                spi-max-frequency = <32000000>;
+                spi-cpol;
+                spi-cpha;
+                rotate = <270>;
+                fps = <30>;
+                txbuflen = <131072>; // 128KB
+                bgr;
+                buswidth = <8>;
+                width = <240>;
+                height = <240>;
+
+                reset = <&porta 27 GPIO_ACTIVE_HIGH>;
+                dc = <&porta 15 GPIO_ACTIVE_HIGH>;
+
+                debug = <0x0>;
+        };
+};
+
+&spi3 {
+	status = "disabled";
+};
+
+&dac {
+        status = "disabled";
+        /delete-property/ mute-gpio-r;
+};
+
+&fb_reserved {
+        status = "okay";
+};
+
+&cvi_fb {
+        status = "okay"; // framebuffer
+};
+
+&mipi_rx {
+        status = "disabled";
+};
+
+/ {
+        model = "LicheeRv Nano";
+
+        /*
+	spi4: spi4@gpio {
+		compatible = "spi-gpio";
+		sck-gpio = <&porta 22 0>;              // EMMC_CLK/SPINOR_SCK/SPINAND_CLK/XGPIOA[22]/SPINOR_SCK
+		miso-gpio = <&porta 23 0>;             // EMMC_CMD/SPINOR_MISO/SPINAND_MISO/XGPIOA[23]/SPINOR_MISO
+		mosi-gpio = <&porta 25 0>;             // EMMC_DAT[0]/SPINOR_MOSI/SPINAND_MOSI/XGPIOA[25]/SPINOR_MOSI
+		cs-gpio = <&porta 24 GPIO_ACTIVE_LOW>; // EMMC_DAT[1]/SPINOR_CS_X/SPINAND_CS/XGPIOA[24]/SPINOR_CS_X
+		num-chipselects = <1>;
+
+		status = "okay";
+
+                // bias-pull-up;
+
+                gc9a01: gc9a01@0 {
+                        compatible = "galaxycore,gc9a01";
+                        reg = <0>;
+                        status = "okay";
+                        spi-max-frequency = <80000000>;
+                        spi-cpol;
+                        spi-cpha;
+                        rotate = <270>;
+                        fps = <30>;
+                        txbuflen = <131072>; // 128KB
+                        bgr;
+                        buswidth = <8>;
+                        width = <240>;
+                        height = <240>;
+
+                        reset = <&porta 27 GPIO_ACTIVE_HIGH>;
+                        dc = <&porta 15 GPIO_ACTIVE_HIGH>;
+
+                        debug = <0x0>;
+                };
+	};
+        */
+
+        /*
+	i2c5: i2c5@gpio {
+		compatible = "i2c-gpio";
+                scl-gpios = <&porta 15 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+                sda-gpios = <&porta 27 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+                i2c-gpio,delay-us = <5>;
+                status = "okay";
+	};
+        */
+
+        gpio-keys {
+                compatible = "gpio-keys";
+                key-user {
+                        label = "User Key";
+                        linux,code = <KEY_DISPLAYTOGGLE>;
+                        debounce-interval = <1>;
+                        gpios = <&porta 30 1>;
+                };
+        };
+
+	leds {
+		compatible = "gpio-leds";
+		led-user {
+			gpios = <&porta 14 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "activity";
+		};
+	};
+
+        /*
+        wifisd:wifi-sd@4320000 {
+                compatible = "cvitek,cv181x-sdio";
+                bus-width = <4>;
+                reg = <0x0 0x4320000 0x0 0x1000>;
+                reg_names = "core_mem";
+                src-frequency = <375000000>;
+                min-frequency = <400000>; // 400Khz
+                //max-frequency = <50000000>; // 50Mhz
+                //max-frequency = <45000000>; // 45Mhz
+                //max-frequency = <40000000>; // 40Mhz
+                //max-frequency = <35000000>; // 35Mhz
+                //max-frequency = <30000000>; // 30Mhz
+                max-frequency = <25000000>; // 25Mhz
+                //max-frequency = <20000000>; // 20Mhz
+                //max-frequency = <15000000>; // 15Mhz
+                //max-frequency = <10000000>; // 10Mhz
+                //max-frequency = <5000000>; // 5Mhz
+                64_addressing;
+                reset_tx_rx_phy;
+                non-removable;
+                pll_index = <0x7>;
+                pll_reg = <0x300207C>;
+                no-mmc;
+                no-sd;
+                status = "okay";
+                interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
+                interrupt-parent = <&plic0>;
+        };
+        */
+};
