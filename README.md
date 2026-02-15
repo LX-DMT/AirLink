@@ -1,4 +1,4 @@
-# LicheeRV-Nano-Build
+# Airlink-Build
 
 # download source
 
@@ -26,8 +26,6 @@ singularity shell -e licheervnano-build-ubuntu.sqfs
 source build/cvisetup.sh
 # C906:
 defconfig sg2002_licheervnano_sd
-# A53:
-# defconfig sg2002_licheea53nano_sd
 build_all
 ```
 
