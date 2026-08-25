@@ -40,3 +40,18 @@ less out/logs/sdk-build.log
 
 确认电脑和AirLink处于同一局域网，路由器关闭访客隔离，并允许TCP 7575。
 电脑连接5GHz通常可以避开部分路由器对2.4GHz客户端的隔离。
+
+## WSL克隆GitHub或下载工具链速度极慢
+
+Windows使用本机代理时，WSL2 NAT中的`127.0.0.1`不是Windows主机。先查看
+默认网关，再设置代理：
+
+```bash
+ip route | grep default
+export http_proxy=http://172.18.48.1:7897
+export https_proxy=$http_proxy
+git clone https://github.com/LX-DMT/AirLink.git
+```
+
+请按本机实际网关和代理端口替换示例值。不要把代理密码、Token或认证信息写入
+仓库。

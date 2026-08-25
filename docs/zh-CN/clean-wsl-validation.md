@@ -26,6 +26,17 @@ Set-ExecutionPolicy -Scope Process Bypass
   -InstallRoot D:\AirLink-WSL
 ```
 
+如果Windows代理只监听`127.0.0.1`，且WSL提示无法镜像localhost代理，先在
+WSL中执行`ip route`查看Windows主机网关，再向脚本传入代理。例如Windows代理
+端口为7897、WSL网关为`172.18.48.1`时增加：
+
+```powershell
+-ProxyUrl http://172.18.48.1:7897
+```
+
+代理只用于apt、Git克隆和`make bootstrap`下载；验证证据只记录不含密码的代理
+端点。
+
 脚本会检查GitHub HTTPS地址、导入全新WSL2、创建`builder`、执行README固定
 命令、把证据和本次准确生成的发布`.img`复制到
 `airlink-build-validation\`，然后注销临时发行版。`-InstallRoot`可省略；建议

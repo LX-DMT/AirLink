@@ -13,6 +13,7 @@ param(
     [string]$DistroName = 'AirLink-Build-Verify',
     [string]$EvidenceDir = (Join-Path $PWD 'airlink-build-validation'),
     [string]$InstallRoot = (Join-Path $env:LOCALAPPDATA 'AirLink\WSL'),
+    [string]$ProxyUrl = '',
     [switch]$KeepOnSuccess
 )
 
@@ -44,6 +45,19 @@ foreach ($required in @('AIRLINK_VERSION', 'AIRLINK_BUILD', 'AIRLINK_IMAGE')) {
 }
 $imageName = $versionData['AIRLINK_IMAGE']
 
+$proxyExport = ''
+$proxyRecord = 'none'
+if ($ProxyUrl) {
+    $proxyUri = $null
+    if (-not [Uri]::TryCreate($ProxyUrl, [UriKind]::Absolute, [ref]$proxyUri) -or
+        $proxyUri.Scheme -notin @('http', 'https')) {
+        throw "ProxyUrl must be an absolute http:// or https:// URL"
+    }
+    $quotedProxy = $ProxyUrl.Replace("'", "'\''")
+    $proxyExport = "export HTTP_PROXY='$quotedProxy' HTTPS_PROXY='$quotedProxy' http_proxy='$quotedProxy' https_proxy='$quotedProxy'"
+    $proxyRecord = "$($proxyUri.Scheme)://$($proxyUri.Host):$($proxyUri.Port)"
+}
+
 $existing = @(& wsl.exe --list --quiet) | ForEach-Object { $_.Trim([char]0).Trim() }
 if ($existing -contains $DistroName) {
     throw "WSL distribution '$DistroName' already exists. Unregister it before validation."
@@ -71,8 +85,9 @@ try {
         throw "wsl --import failed with exit code $LASTEXITCODE"
     }
 
-    Invoke-WslChecked -User root -Command @'
+    Invoke-WslChecked -User root -Command @"
 set -euo pipefail
+$proxyExport
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y ca-certificates git make python3 sudo
@@ -80,7 +95,7 @@ id builder >/dev/null 2>&1 || useradd --create-home --shell /bin/bash builder
 printf 'builder ALL=(ALL) NOPASSWD: ALL\n' >/etc/sudoers.d/90-airlink-builder
 chmod 0440 /etc/sudoers.d/90-airlink-builder
 chown -R builder:builder /home/builder
-'@
+"@
 
     $quotedUrl = $RepositoryUrl.Replace("'", "'\''")
     $quotedBranch = $Branch.Replace("'", "'\''")
@@ -92,6 +107,7 @@ chown -R builder:builder /home/builder
     }
     Invoke-WslChecked -User builder -Command @"
 set -euo pipefail
+$proxyExport
 cd /home/builder
 $cloneCommand
 cd AirLink
@@ -148,6 +164,7 @@ make verify
         "rootfs=$RootfsTar"
         "rootfs_sha256=$rootfsHash"
         "install_root=$InstallRoot"
+        "proxy=$proxyRecord"
         $sourceCommitLine
     ) | Set-Content -LiteralPath (Join-Path $EvidenceDir 'clean-wsl-run.txt') -Encoding UTF8
 

@@ -28,6 +28,17 @@ Set-ExecutionPolicy -Scope Process Bypass
   -InstallRoot D:\AirLink-WSL
 ```
 
+If Windows uses a localhost proxy and WSL reports that it cannot mirror the
+proxy, obtain the Windows-host gateway inside WSL with `ip route` and pass it
+to the runner. For example, for a Windows proxy on port 7897:
+
+```powershell
+-ProxyUrl http://172.18.48.1:7897
+```
+
+The proxy is used only for package downloads, Git clone and bootstrap. The
+evidence records the endpoint without credentials.
+
 The runner verifies that the URL is GitHub HTTPS, imports a new WSL2
 distribution, creates `builder`, executes the README path, copies the release
 evidence and the exact release `.img` to `airlink-build-validation\`, and
