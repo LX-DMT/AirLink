@@ -4,6 +4,8 @@
 *.swp
 *.o
 *.ko
+!osdrv/interdrv/v2/jpeg/*/soph_jpeg.ko
+!osdrv/interdrv/v2/cvi_vc_drv/*/soph_vc_driver.ko
 *.d
 !init.d
 host-tools/
