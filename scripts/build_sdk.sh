@@ -33,6 +33,9 @@ log="$log_dir/sdk-build.log"
     # validation starts without that directory populated.
     rm -rf -- "$root/buildroot/output" "$OUTPUT_DIR"
     rm -rf -- "$root/buildroot/board/cvitek/SG200X/overlay/mnt/system"
+    # The vendor middleware build assumes these output directories already exist.
+    # Git cannot preserve the ignored empty directories in a fresh clone.
+    mkdir -p "$root/middleware/v2/lib/3rd"
 
     # Mirror the compile portion of the vendor build_all function, but stop
     # after the source-built RootFS is ready. AirLink assembles its own final
