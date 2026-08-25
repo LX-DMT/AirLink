@@ -51,36 +51,35 @@ static int cst8xxT_init(struct hyn_ts_data* ts_data)
 
 static int  cst8xxT_enter_boot(void)
 {
-    // uint8_t t;
-    // hyn_set_i2c_addr(hyn_8xxTdata,BOOT_I2C_ADDR);
-    // for (t = 5;; t += 2)
-    // {
-    //     int ok = FALSE;
-    //     uint8_t i2c_buf[1] = {0xAB};
+    uint8_t t;
+    hyn_set_i2c_addr(hyn_8xxTdata,BOOT_I2C_ADDR);
+    for (t = 5;; t += 2)
+    {
+        int ok = FALSE;
+        uint8_t i2c_buf[4] = {0};
 
-    //     if (t >= 15){
-    //         return FALSE;
-    //     }
+        if (t >= 15){
+            return FALSE;
+        }
 
-    //     cst8xxT_rst();
-    //     mdelay(t);
+        cst8xxT_rst();
+        mdelay(t);
 
-    //     ok = hyn_wr_reg(hyn_8xxTdata, 0xA001, 2, i2c_buf, 1);
-    //     HYN_INFO("0xA001 i2c_buf[0] = 0x%02x",i2c_buf[0]);
-    //     if(ok == FALSE){
-    //         continue;
-    //     }
+        ok = hyn_wr_reg(hyn_8xxTdata, 0xA001AB, 3, i2c_buf, 0);
+        if(ok == FALSE){
+            continue;
+        }
 
-    //     ok = hyn_wr_reg(hyn_8xxTdata, 0xA003, 2, i2c_buf, 1);
-    //     HYN_INFO("0xA003 i2c_buf[0] = 0x%02x",i2c_buf[0]);
-    //     if(ok == FALSE){
-    //         continue;
-    //     }
-    //     if (i2c_buf[0] != 0xC1){
-    //         continue;
-    //     }
-    //     break;
-    // }
+        ok = hyn_wr_reg(hyn_8xxTdata, 0xA003,  2, i2c_buf, 1);
+        if(ok == FALSE){
+            continue;
+        }
+
+        if (i2c_buf[0] != 0xC1){
+            continue;
+        }
+        break;
+    }
     return TRUE;
 }
 
@@ -355,9 +354,8 @@ static int cst8xxT_set_workmode(enum work_mode mode,u8 enable)
 
 static void cst8xxT_rst(void)
 {
-    HYN_INFO("CST8xxT reset: using gpio %d", hyn_8xxTdata->plat_data.reset_gpio);
     gpio_set_value(hyn_8xxTdata->plat_data.reset_gpio,0);
-    msleep(10);
+    msleep(5);
     gpio_set_value(hyn_8xxTdata->plat_data.reset_gpio,1);
 }
 

@@ -1,0 +1,9 @@
+family=Noto Sans SC Variable
+source=C:/Windows/Fonts/NotoSansSC-VF.ttf
+sha256=763146584cf0710223441356b4395e279021b0806c196614377a7a0174ae074a
+styles=Medium
+small_profile=13px Medium 2bpp contrast-stretch=32..224
+heading_sizes=17,18,20,21,27
+generator=generate_fonts.py
+metrics=advance stored in 1/16 px and converted to whole pixels by callback; bbox/baseline from Pillow
+license=OFL.txt

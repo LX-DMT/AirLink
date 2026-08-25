@@ -225,7 +225,7 @@
 	/* config loglevel */
 	#define RELEASE
 	#ifdef RELEASE
-		#define CONSOLE_LOGLEVEL   " loglevel=7"
+		#define CONSOLE_LOGLEVEL   " loglevel=0"
 		#define EARLYCON_RELEASE   " release "
 	#else
 		#define CONSOLE_LOGLEVEL   " loglevel=9"
@@ -291,7 +291,7 @@
 	#endif
 
 	#define SET_BOOTARGS "setenv bootargs ${reserved_mem} ${root} ${mtdparts} " \
-					"console=tty1 console=$consoledev,$baudrate $othbootargs;"
+					"console=$consoledev,$baudrate $othbootargs;"
 
 	#define SD_BOOTM_COMMAND \
 				SET_BOOTARGS \

@@ -1,3 +1,5 @@
+.cache/
+.host-tools.tmp.*
 *~
 *.swp
 *.o
@@ -422,3 +424,13 @@ middleware/v2/lib
 host-tools/
 kvm/
 .vscode*
+
+# AirLink local build and release output
+/host-tools/
+/install/
+/out/
+*.img
+*.img.zst
+*.log
+__pycache__/
+*.py[cod]

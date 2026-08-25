@@ -18,8 +18,6 @@ gen_hostapd_conf() {
 	echo "macaddr_acl=0"
 	echo "auth_algs=3"
 	echo "wpa=2"
-	echo "wpa_pairwise=CCMP"
-	echo "rsn_pairwise=CCMP"
 	echo "wpa_passphrase=${pass}"
 	echo "ieee80211n=1"
 }
@@ -36,8 +34,6 @@ gen_udhcpd_conf() {
         echo "lease_file /var/lib/misc/udhcpd.${interface}.leases"
         echo "option subnet 255.255.255.0"
         echo "option lease 864000"
-        echo "option dns ${ipv4_prefix}.1"
-        echo "option router ${ipv4_prefix}.1"
 }
 
 start() {
@@ -94,8 +90,8 @@ start() {
 			then
 				id3=254
 			fi
-			ssid="AirLink-${id2}${id3}"
-			pass="AirLink9527"
+			ssid="licheervnano-${id2}${id3}"
+			pass="licheervnano"
 			if [ -e /boot/wifi.ssid ]
 			then
 				echo -n "ssid: "
@@ -139,24 +135,20 @@ start() {
 }
 
 stop() {
-	# Use -r to only run kill if there are PIDs
-	ps -ef|grep hostapd|grep -v grep|awk '{print $1}'|xargs -r kill -2 || true
-	ps -ef|grep "udhcpd -S /etc/udhcpd.wlan0.conf" |grep -v grep|awk '{print $1}'|xargs -r kill -2 || true
-	killall wpa_supplicant 2>/dev/null || true
+	ps -ef|grep hostapd|grep -v grep|awk '{print $1}'|xargs kill -2 || true
+	ps -ef|grep "udhcpd -S /etc/udhcpd.wlan0.conf" |grep -v grep|awk '{print $1}'|xargs kill -2 || true
+	killall wpa_supplicant || true
 	if [ -e /run/udhcpc.wlan0.pid ]
 	then
-		kill `cat /run/udhcpc.wlan0.pid` 2>/dev/null || true
+		kill `cat /run/udhcpc.wlan0.pid` || true
 		rm -f /run/udhcpc.wlan0.pid
 	fi
 	if [ -e /var/run/udhcpd.wlan0.pid ]
 	then
-		kill `cat /var/run/udhcpd.wlan0.pid` 2>/dev/null || true
+		kill `cat /var/run/udhcpd.wlan0.pid`  || true
 		rm -f /var/run/udhcpd.wlan0.pid
 	fi
-	# Only stop airmon-ng if wlan0mon exists
-	if ifconfig wlan0mon >/dev/null 2>&1; then
-		airmon-ng stop wlan0mon >/dev/null 2>&1 || true
-	fi
+	airmon-ng stop wlan0mon || true
 }
 
 restart() {

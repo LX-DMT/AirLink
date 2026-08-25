@@ -184,7 +184,7 @@ u-boot-build: ${UBOOT_PATH}/${UBOOT_OUTPUT_FOLDER} ${UBOOT_CVIPART_DEP} ${UBOOT_
 	${Q}ln -s ${BUILD_PATH}/boards/${CHIP_ARCH_L}/${PROJECT_FULLNAME}/u-boot/cvi_board_init.c ${UBOOT_CVI_BOARD_INIT_PATH}
 	${Q}rm -f ${UBOOT_CVITEK_PATH}
 	${Q}ln -s ${BUILD_PATH}/boards/${CHIP_ARCH_L}/${PROJECT_FULLNAME}/u-boot/cvitek.h ${UBOOT_CVITEK_PATH}
-	${Q}$(MAKE) -j${NPROC} -C ${UBOOT_PATH} olddefconfig
+	${Q}$(MAKE) -C ${UBOOT_PATH} olddefconfig
 	${Q}$(MAKE) -j${NPROC} -C ${UBOOT_PATH} all
 	${Q}cat ${UBOOT_PATH}/${UBOOT_OUTPUT_FOLDER}/u-boot.bin > ${UBOOT_PATH}/${UBOOT_OUTPUT_FOLDER}/u-boot-raw.bin
 ifeq (${CONFIG_UBOOT_SPL_CUSTOM},y)
@@ -560,7 +560,9 @@ br-rootfs-pack:
 	# copy rootfs to rawimg dir
 	${Q}cp $(BR_DIR)/output/images/rootfs.ext4 $(OUTPUT_DIR)/rawimages/rootfs.$(STORAGE_TYPE)
 	${Q}tar zcvf $(OUTPUT_DIR)/licheervnano-drivers.tar.gz $(BR_DIR)/output/target/mnt
+ifneq ($(STORAGE_TYPE),sd)
 	$(call raw2cimg ,rootfs.$(STORAGE_TYPE))
+endif
 
 ifeq ($(CONFIG_BUILDROOT_FS),y)
 rootfs:br-rootfs-prepare

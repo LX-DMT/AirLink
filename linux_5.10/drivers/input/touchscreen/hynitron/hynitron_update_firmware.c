@@ -3410,10 +3410,6 @@ int cst8xx_firmware_info(struct i2c_client *mclient)
 		return -1;
 	}
 	
-	if (!hyn_ts_data->p_hynitron_upgrade_firmware) {
-		HYN_INFO("Firmware data not initialized\n");
-		return -1;
-	}
 	fwversion   = *(hyn_ts_data->p_hynitron_upgrade_firmware+0x3BFD+6);
 	fwversion <<= 8;
 	fwversion  += *(hyn_ts_data->p_hynitron_upgrade_firmware+0x3BFC+6);

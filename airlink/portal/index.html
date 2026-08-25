@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#F5F7FA">
+<title>AirLink 网络配置</title>
+<style>
+:root{
+  color-scheme:light;
+  --page:#F5F7FA;
+  --surface:#FFFFFF;
+  --primary:#2563EB;
+  --primary-pressed:#1D4ED8;
+  --primary-soft:#EFF6FF;
+  --primary-line:#3B82F6;
+  --text:#142033;
+  --muted:#667085;
+  --subtle:#98A2B3;
+  --line:#E4EAF2;
+  --line-strong:#D6DEE9;
+  --success:#15803D;
+  --success-soft:#F0FDF4;
+  --danger:#DC2626;
+  --danger-soft:#FEF2F2;
+  --shadow:0 18px 48px rgba(15,23,42,.10);
+}
+*{box-sizing:border-box}
+html,body{min-height:100%;background:var(--page)}
+body{
+  margin:0;
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+button,input{font:inherit}
+button{-webkit-tap-highlight-color:transparent}
+.shell{
+  width:100%;
+  max-width:480px;
+  min-height:100vh;
+  min-height:100dvh;
+  margin:0 auto;
+  padding:calc(12px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));
+}
+.brand{display:flex;align-items:center;gap:7px;margin:0 4px 14px}
+.brand-mark{
+  width:32px;height:32px;border-radius:9px;
+  display:grid;place-items:center;flex:none;
+  color:#1D4ED8;background:transparent;
+}
+.brand-mark svg{width:30px;height:30px;display:block;overflow:visible}
+.brand-mark .icon-frame{stroke-width:2.35}
+.brand-mark .icon-detail{stroke-width:2.15}
+.brand-name{font-size:16px;line-height:1.05;font-weight:720;letter-spacing:.15px}
+.brand-caption{margin-top:2px;color:var(--muted);font-size:11px}
+.panel{
+  background:var(--surface);
+  border:1px solid rgba(228,234,242,.9);
+  border-radius:20px;
+  padding:22px 18px 20px;
+  box-shadow:var(--shadow);
+}
+h1{font-size:25px;line-height:1.25;margin:0;font-weight:760;letter-spacing:-.4px}
+.intro{font-size:14px;line-height:1.65;color:var(--muted);margin:8px 0 20px}
+.section{margin-top:22px}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 2px 10px}
+.section-title{font-size:14px;font-weight:700;color:#344054}
+.section-note{font-size:12px;color:var(--subtle)}
+.loading,.empty{
+  min-height:64px;border:1px dashed var(--line-strong);border-radius:14px;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  padding:14px;color:var(--muted);font-size:13px;text-align:center;
+}
+.spinner{
+  width:17px;height:17px;border:2px solid #DBEAFE;border-top-color:var(--primary);
+  border-radius:50%;animation:spin .8s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.network-list{display:grid;gap:9px}
+.wifi-row{
+  width:100%;min-height:58px;margin:0;padding:10px 12px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  color:var(--text);background:#fff;border:1px solid var(--line);
+  border-radius:14px;text-align:left;cursor:pointer;
+  transition:border-color .16s,background .16s,box-shadow .16s,transform .08s;
+}
+.wifi-row:active{transform:scale(.992)}
+.wifi-row.is-selected{
+  background:var(--primary-soft);border:2px solid var(--primary-line);
+  padding:9px 11px;box-shadow:0 7px 18px rgba(37,99,235,.10)
+}
+.wifi-copy{min-width:0;display:grid;gap:5px}
+.wifi-name{font-size:15px;font-weight:670;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wifi-meta{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px;white-space:nowrap}
+.pill{padding:3px 7px;border-radius:999px;background:#F2F4F7;color:#475467;font-weight:650}
+.wifi-row.is-selected .pill{background:#DBEAFE;color:#1D4ED8}
+.signal{height:22px;display:flex;align-items:flex-end;gap:2px;flex:none}
+.signal i{display:block;width:3px;border-radius:2px;background:#D0D5DD}
+.signal i:nth-child(1){height:6px}.signal i:nth-child(2){height:10px}
+.signal i:nth-child(3){height:15px}.signal i:nth-child(4){height:20px}
+.signal i.on{background:var(--primary)}
+.manual-toggle{
+  width:100%;min-height:48px;padding:11px 13px;
+  display:flex;align-items:center;justify-content:space-between;
+  color:#344054;background:#F8FAFC;border:1px solid var(--line);
+  border-radius:13px;font-weight:650;text-align:left
+}
+.manual-toggle span:last-child{color:var(--primary);font-size:18px;transition:transform .18s}
+.manual-toggle[aria-expanded=true] span:last-child{transform:rotate(180deg)}
+.manual-panel{margin-top:11px;padding:13px;background:#F8FAFC;border:1px solid var(--line);border-radius:14px}
+.field{display:grid;gap:7px;margin-top:13px}
+.field:first-child{margin-top:0}
+.field-label{font-size:13px;font-weight:680;color:#344054}
+.input-wrap{position:relative}
+input[type=text],input[type=password]{
+  width:100%;height:50px;padding:0 13px;
+  color:var(--text);background:#fff;border:1px solid var(--line-strong);
+  border-radius:12px;outline:none;transition:border-color .16s,box-shadow .16s
+}
+input:focus{border-color:var(--primary-line);box-shadow:0 0 0 4px rgba(59,130,246,.12)}
+.password-input{padding-right:62px!important}
+.password-toggle{
+  position:absolute;right:6px;top:6px;height:38px;padding:0 10px;
+  color:var(--primary);background:transparent;border:0;border-radius:9px;font-size:12px;font-weight:700
+}
+.switch-row{min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:14px;color:#344054;font-size:13px}
+.switch{position:relative;width:44px;height:26px;flex:none}
+.switch input{position:absolute;opacity:0;pointer-events:none}
+.switch span{position:absolute;inset:0;background:#D0D5DD;border-radius:999px;transition:.18s}
+.switch span:after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.18);transition:.18s}
+.switch input:checked+span{background:var(--primary)}
+.switch input:checked+span:after{transform:translateX(18px)}
+.open-note{margin-top:12px;padding:11px 12px;border-radius:12px;background:#F8FAFC;color:var(--muted);font-size:13px}
+.connect{
+  width:100%;height:52px;margin-top:18px;border:0;border-radius:14px;
+  color:#fff;background:var(--primary);font-size:15px;font-weight:750;
+  box-shadow:0 10px 22px rgba(37,99,235,.22);transition:background .15s,transform .08s,opacity .15s
+}
+.connect:active:not(:disabled){background:var(--primary-pressed);transform:scale(.992)}
+.connect:disabled{opacity:.45;box-shadow:none}
+.button-content{display:flex;align-items:center;justify-content:center;gap:9px}
+.connect .spinner{border-color:rgba(255,255,255,.35);border-top-color:#fff}
+.message{margin-top:13px;padding:12px 13px;border-radius:12px;font-size:13px;line-height:1.55}
+.message.info{color:#1D4ED8;background:var(--primary-soft)}
+.message.success{color:var(--success);background:var(--success-soft)}
+.message.error{color:var(--danger);background:var(--danger-soft)}
+.privacy{margin:15px 4px 0;text-align:center;color:var(--subtle);font-size:11px;line-height:1.6}
+[hidden]{display:none!important}
+@media(max-width:350px){
+  .shell{padding-left:12px;padding-right:12px}
+  .panel{padding-left:14px;padding-right:14px}
+  h1{font-size:23px}
+}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<main class="shell">
+  <header class="brand">
+    <div class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 32 32" focusable="false">
+        <rect class="icon-frame" x="1.8" y="1.8" width="28.4" height="28.4" rx="7"
+              fill="none" stroke="currentColor"/>
+        <g class="icon-detail" fill="none" stroke="currentColor"
+           stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8.1 11.35V8.2h4.25v3.15"/>
+          <path d="M7 11.35h6.45v3.8a3.23 3.23 0 0 1-6.45 0z"/>
+          <path d="M10.22 18.38v1.15a5.75 5.75 0 0 0 5.75 5.75h.6a5.75 5.75 0 0 0 4.85-2.66l2.5-3.92"/>
+          <rect x="23.15" y="15.3" width="4.45" height="4.45" rx=".85"/>
+          <path d="M13.95 10.2a7.15 7.15 0 0 1 9.8 0"/>
+          <path d="M15.75 13.35a4.55 4.55 0 0 1 6.2 0"/>
+          <path d="M18.02 16.48a1.45 1.45 0 0 1 1.72 0"/>
+        </g>
+      </svg>
+    </div>
+    <div><div class="brand-name">AirLink</div><div class="brand-caption">轻松连接，随时共享</div></div>
+  </header>
+
+  <section class="panel">
+    <h1>配置 Wi-Fi</h1>
+    <p class="intro">请选择AirLink需要连接的无线网络，配置成功后设备会自动恢复无线共享。</p>
+
+    <section class="section" aria-labelledby="networkTitle">
+      <div class="section-head">
+        <div id="networkTitle" class="section-title">可用 Wi-Fi</div>
+        <div id="networkCount" class="section-note">正在扫描</div>
+      </div>
+      <div id="networkList" class="network-list" role="listbox">
+        <div class="loading"><span class="spinner"></span>正在加载附近网络</div>
+      </div>
+    </section>
+
+    <form id="provisionForm" class="section" novalidate>
+      <button id="manualToggle" class="manual-toggle" type="button" aria-expanded="false" aria-controls="manualPanel">
+        <span>找不到网络？手动输入</span><span aria-hidden="true">⌄</span>
+      </button>
+      <div id="manualPanel" class="manual-panel" hidden>
+        <label class="field">
+          <span class="field-label">网络名称（SSID）</span>
+          <input id="manualSsid" type="text" maxlength="32" autocomplete="off" placeholder="请输入Wi-Fi名称">
+        </label>
+        <div class="switch-row">
+          <span>这是一个开放网络</span>
+          <label class="switch"><input id="manualOpen" type="checkbox"><span></span></label>
+        </div>
+      </div>
+
+      <label id="passwordWrap" class="field" hidden>
+        <span class="field-label">网络密码</span>
+        <span class="input-wrap">
+          <input id="password" class="password-input" type="password" maxlength="64" autocomplete="new-password" placeholder="请输入8–63位密码">
+          <button id="passwordToggle" class="password-toggle" type="button">显示</button>
+        </span>
+      </label>
+      <div id="openNotice" class="open-note" hidden>该网络无需密码，可以直接连接。</div>
+
+      <button id="connectButton" class="connect" type="submit" disabled>
+        <span class="button-content"><span id="connectSpinner" class="spinner" hidden></span><span id="connectText">保存并连接</span></span>
+      </button>
+      <div id="message" class="message" hidden role="status" aria-live="polite"></div>
+    </form>
+  </section>
+  <p class="privacy">配置信息仅保存在本机，不会上传到互联网。</p>
+</main>
+
+<script>
+"use strict";
+const $=selector=>document.querySelector(selector);
+const preview=location.protocol==="file:";
+let sessionId=0;
+let selected=null;
+let selectedButton=null;
+let manualMode=false;
+let busy=false;
+
+const mockNetworks=[
+  {ssid:"AirLink Lab 5G",rssi_dbm:-43,frequency_mhz:5180,secured:true},
+  {ssid:"家庭网络",rssi_dbm:-57,frequency_mhz:2412,secured:true},
+  {ssid:"Office-Guest",rssi_dbm:-68,frequency_mhz:2462,secured:false},
+  {ssid:"设备测试网络-01",rssi_dbm:-78,frequency_mhz:5745,secured:true}
+];
+
+async function api(path,options){
+  if(preview){
+    await new Promise(resolve=>setTimeout(resolve,180));
+    if(path==="/api/status")return{ok:true,session_id:26,phase:3,error:0,mandatory:true};
+    if(path==="/api/networks")return{networks:mockNetworks};
+    if(path==="/api/provision")return{ok:true};
+  }
+  const response=await fetch(path,options);
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||"request-failed");
+  return data;
+}
+
+function signalLevel(rssi){
+  if(rssi>=-52)return 4;
+  if(rssi>=-62)return 3;
+  if(rssi>=-72)return 2;
+  return 1;
+}
+
+function bandOf(network){return network.frequency_mhz>=4900?"5 GHz":"2.4 GHz"}
+
+function setMessage(type,text){
+  const message=$("#message");
+  message.className="message "+type;
+  message.textContent=text;
+  message.hidden=!text;
+}
+
+function setBusy(value){
+  busy=value;
+  $("#connectSpinner").hidden=!value;
+  $("#connectText").textContent=value?"正在连接…":"保存并连接";
+  document.querySelectorAll("button,input").forEach(control=>control.disabled=value);
+  if(!value){
+    $("#manualOpen").disabled=false;
+    updateConnectState();
+  }
+}
+
+function updateSecurityUi(){
+  const secured=selected&&selected.secured;
+  $("#passwordWrap").hidden=!secured;
+  $("#openNotice").hidden=!selected||secured;
+  if(!secured)$("#password").value="";
+  updateConnectState();
+}
+
+function validPassword(value){return(value.length>=8&&value.length<=63)||/^[0-9a-fA-F]{64}$/.test(value)}
+
+function updateConnectState(){
+  if(busy)return;
+  const validSsid=selected&&selected.ssid.length>0&&new TextEncoder().encode(selected.ssid).length<=32;
+  const valid=validSsid&&(!selected.secured||validPassword($("#password").value));
+  $("#connectButton").disabled=!valid;
+}
+
+function selectNetwork(network,button){
+  manualMode=false;
+  $("#manualPanel").hidden=true;
+  $("#manualToggle").setAttribute("aria-expanded","false");
+  $("#manualSsid").value="";
+  $("#manualOpen").checked=false;
+  $("#password").value="";
+  if(selectedButton){
+    selectedButton.classList.remove("is-selected");
+    selectedButton.setAttribute("aria-selected","false");
+  }
+  selectedButton=button;
+  selectedButton.classList.add("is-selected");
+  selectedButton.setAttribute("aria-selected","true");
+  selected={ssid:network.ssid,secured:!!network.secured};
+  setMessage("info","");
+  updateSecurityUi();
+  if(selected.secured)setTimeout(()=>$("#password").focus(),80);
+}
+
+function buildSignal(rssi){
+  const signal=document.createElement("span");
+  signal.className="signal";
+  signal.setAttribute("aria-label","信号 "+rssi+" dBm");
+  const level=signalLevel(rssi);
+  for(let index=1;index<=4;index++){
+    const bar=document.createElement("i");
+    if(index<=level)bar.className="on";
+    signal.appendChild(bar);
+  }
+  return signal;
+}
+
+function renderNetworks(networks){
+  const list=$("#networkList");
+  list.replaceChildren();
+  $("#networkCount").textContent=networks.length+" 个网络";
+  if(!networks.length){
+    const empty=document.createElement("div");
+    empty.className="empty";
+    empty.textContent="未扫描到附近网络，请使用手动输入。";
+    list.appendChild(empty);
+    return;
+  }
+  networks.forEach(network=>{
+    const button=document.createElement("button");
+    button.type="button";
+    button.className="wifi-row";
+    button.setAttribute("role","option");
+    button.setAttribute("aria-selected","false");
+
+    const copy=document.createElement("span");
+    copy.className="wifi-copy";
+    const name=document.createElement("span");
+    name.className="wifi-name";
+    name.textContent=network.ssid;
+    const meta=document.createElement("span");
+    meta.className="wifi-meta";
+    const band=document.createElement("span");
+    band.className="pill";
+    band.textContent=bandOf(network);
+    const security=document.createElement("span");
+    security.textContent=network.secured?"已加密":"开放";
+    const strength=document.createElement("span");
+    strength.textContent=network.rssi_dbm+" dBm";
+    meta.append(band,security,strength);
+    copy.append(name,meta);
+    button.append(copy,buildSignal(network.rssi_dbm));
+    button.addEventListener("click",()=>selectNetwork(network,button));
+    list.appendChild(button);
+  });
+}
+
+function useManualMode(open){
+  manualMode=open;
+  $("#manualPanel").hidden=!open;
+  $("#manualToggle").setAttribute("aria-expanded",String(open));
+  if(open){
+    if(selectedButton){
+      selectedButton.classList.remove("is-selected");
+      selectedButton.setAttribute("aria-selected","false");
+    }
+    selectedButton=null;
+    $("#password").value="";
+    const ssid=$("#manualSsid").value.trim();
+    selected=ssid?{ssid,secured:!$("#manualOpen").checked}:null;
+    updateSecurityUi();
+    setTimeout(()=>$("#manualSsid").focus(),80);
+  }
+}
+
+function errorText(code){
+  const messages={
+    "stale-session":"配网页面已过期，请重新连接AirLink热点。",
+    "invalid-ssid":"Wi-Fi名称无效，请检查后重试。",
+    "invalid-password":"密码应为8–63位字符。",
+    "candidate-write":"配置暂时无法保存，请稍后重试。",
+    "request-failed":"提交失败，请确认手机仍连接AirLink热点。"
+  };
+  return messages[code]||"连接请求失败，请检查输入后重试。";
+}
+
+$("#manualToggle").addEventListener("click",()=>useManualMode(!manualMode));
+$("#manualSsid").addEventListener("input",event=>{
+  if(!manualMode)return;
+  const ssid=event.target.value.trim();
+  selected=ssid?{ssid,secured:!$("#manualOpen").checked}:null;
+  updateSecurityUi();
+});
+$("#manualOpen").addEventListener("change",event=>{
+  if(!manualMode)return;
+  const ssid=$("#manualSsid").value.trim();
+  selected=ssid?{ssid,secured:!event.target.checked}:null;
+  $("#password").value="";
+  updateSecurityUi();
+});
+$("#password").addEventListener("input",updateConnectState);
+$("#passwordToggle").addEventListener("click",()=>{
+  const input=$("#password");
+  const show=input.type==="password";
+  input.type=show?"text":"password";
+  $("#passwordToggle").textContent=show?"隐藏":"显示";
+});
+
+$("#provisionForm").addEventListener("submit",async event=>{
+  event.preventDefault();
+  if(!selected||busy)return;
+  setBusy(true);
+  setMessage("info","正在提交配置，请保持手机连接当前热点。");
+  const body=new URLSearchParams({
+    session_id:String(sessionId),
+    ssid:selected.ssid,
+    password:selected.secured?$("#password").value:"",
+    open:selected.secured?"0":"1"
+  });
+  try{
+    const result=await api("/api/provision",{
+      method:"POST",
+      body,
+      headers:{"Content-Type":"application/x-www-form-urlencoded"}
+    });
+    if(!result.ok)throw new Error(result.error||"request-failed");
+    setMessage("success","配置已提交，AirLink正在连接所选网络，请等待圆屏显示结果。");
+    $("#connectText").textContent="配置已提交";
+    $("#connectSpinner").hidden=true;
+  }catch(error){
+    setBusy(false);
+    setMessage("error",errorText(error.message));
+  }
+});
+
+async function load(){
+  try{
+    const status=await api("/api/status");
+    sessionId=status.session_id;
+    const data=await api("/api/networks");
+    renderNetworks(Array.isArray(data.networks)?data.networks:[]);
+  }catch(error){
+    $("#networkCount").textContent="加载失败";
+    const list=$("#networkList");
+    list.replaceChildren();
+    const empty=document.createElement("div");
+    empty.className="empty";
+    empty.textContent="无法获取附近网络，请使用手动输入。";
+    list.appendChild(empty);
+    setMessage("error","网络列表加载失败，但仍可手动输入Wi-Fi。");
+  }
+}
+load();
+</script>
+</body>
+</html>

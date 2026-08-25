@@ -84,7 +84,8 @@ void pinmux_config(int io_type)
 			 * Name            Address            SD1  MIPI
 			 * reg_sd1_phy_sel REG_0x300_0294[10] 0x0  0x1
 			 */
-			mmio_write_32(TOP_BASE + 0x294, (mmio_read_32(TOP_BASE + 0x294) & 0xFFFFFBFF));
+			mmio_write_32(TOP_BASE + 0x294,
+				      (mmio_read_32(TOP_BASE + 0x294) & 0xFFFFFBFF));
 			PINMUX_CONFIG(SD1_CMD, PWR_SD1_CMD_VO36);
 			PINMUX_CONFIG(SD1_CLK, PWR_SD1_CLK_VO37);
 			PINMUX_CONFIG(SD1_D0, PWR_SD1_D0_VO35);
@@ -96,7 +97,8 @@ void pinmux_config(int io_type)
 			 * Name            Address            SD1  MIPI
 			 * reg_sd1_phy_sel REG_0x300_0294[10] 0x0  0x1
 			 */
-			mmio_write_32(TOP_BASE + 0x294, (mmio_read_32(TOP_BASE + 0x294) & 0xFFFFFBFF) | BIT(10));
+			mmio_write_32(TOP_BASE + 0x294,
+				      (mmio_read_32(TOP_BASE + 0x294) & 0xFFFFFBFF) | BIT(10));
 			PINMUX_CONFIG(PAD_MIPI_TXM4, SD1_CLK);
 			PINMUX_CONFIG(PAD_MIPI_TXP4, SD1_CMD);
 			PINMUX_CONFIG(PAD_MIPI_TXM3, SD1_D0);
@@ -235,17 +237,13 @@ int board_init(void)
 #elif defined(CONFIG_EMMC_SUPPORT)
 	pinmux_config(PINMUX_EMMC);
 #endif
-
-// #ifdef CONFIG_DISPLAY_CVITEK_MIPI
-// 	pinmux_config(PINMUX_DSI);
-// #elif defined(CONFIG_DISPLAY_CVITEK_LVDS)
-// 	pinmux_config(PINMUX_LVDS);
-// #endif
-
+#ifdef CONFIG_DISPLAY_CVITEK_MIPI
+	pinmux_config(PINMUX_DSI);
+#elif defined(CONFIG_DISPLAY_CVITEK_LVDS)
+	pinmux_config(PINMUX_LVDS);
+#endif
 	pinmux_config(PINMUX_SDIO1);
-
 	cvi_board_init();
-	
 	return 0;
 }
 

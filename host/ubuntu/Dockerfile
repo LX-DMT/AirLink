@@ -1,6 +1,6 @@
 FROM ubuntu:22.04
 
-ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND noninteractive
 
 RUN ldconfig && apt update -y && \
 	apt install -y pkg-config build-essential ninja-build\

@@ -1,0 +1,39 @@
+#!/bin/sh
+
+module_dir=/mnt/system/ko
+
+start()
+{
+    printf 'load AirLink Wi-Fi modules: '
+    cd "$module_dir" || return 1
+
+    for module in cfg80211.ko 3rd/aic8800_bsp.ko 3rd/aic8800_fdrv.ko; do
+        if [ ! -f "$module" ]; then
+            echo "missing $module"
+            return 1
+        fi
+        insmod "$module" || return 1
+    done
+
+    echo "OK"
+}
+
+stop()
+{
+    rmmod aic8800_fdrv 2>/dev/null || true
+    rmmod aic8800_bsp 2>/dev/null || true
+    rmmod cfg80211 2>/dev/null || true
+}
+
+case "${1:-}" in
+    start) start ;;
+    stop) stop ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac

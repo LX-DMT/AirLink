@@ -29,8 +29,7 @@ endef
 
 .PHONY: clean all module component sample install uninstall package 3rdparty
 
-all: prepare 3rdparty module component #sample
-
+all: prepare 3rdparty module component sample
 
 module: prepare 3rdparty
 	@make -C modules/
@@ -55,22 +54,22 @@ install:
 	@mkdir -p $(DESTDIR)/usr/lib/3rd
 ifneq ($(FLASH_SIZE_SHRINK),y)
 	# copy sample_xxx
-	#@cp -f sample/mipi_tx/sample_dsi $(DESTDIR)/usr/bin
-	#@cp -f sample/vio/sample_vio $(DESTDIR)/usr/bin
-	#@cp -f sample/sensor_test/sensor_test $(DESTDIR)/usr/bin
-	#@cp -f sample/test_mmf/test_mmf $(DESTDIR)/usr/bin
-	#@cp -f sample/audio/sample_audio $(DESTDIR)/usr/bin
+	@cp -f sample/mipi_tx/sample_dsi $(DESTDIR)/usr/bin
+	@cp -f sample/vio/sample_vio $(DESTDIR)/usr/bin
+	@cp -f sample/sensor_test/sensor_test $(DESTDIR)/usr/bin
+	@cp -f sample/test_mmf/test_mmf $(DESTDIR)/usr/bin
+	@cp -f sample/audio/sample_audio $(DESTDIR)/usr/bin
 	#@cp -f sample/cipher/sample_cipher $(DESTDIR)/usr/bin
 	#@cp -f sample/cvg/sample_cvg $(DESTDIR)/usr/bin
-	#@cp -f sample/venc/sample_venc $(DESTDIR)/usr/bin
-	#@cp -f sample/venc/sample_vcodec $(DESTDIR)/usr/bin
-	#@cp -f sample/vdec/sample_vdec $(DESTDIR)/usr/bin
-	#@cp -f sample/ive/sample_* $(DESTDIR)/usr/bin
-	#@cp -f sample/ive/ive_stress $(DESTDIR)/usr/bin
-	#@cp -f sample/region/sample_region $(DESTDIR)/usr/bin
-	#@cp -f sample/vdecvo/sample_vdecvo $(DESTDIR)/usr/bin
-	#@cp -f sample/overlay/sample_overlay $(DESTDIR)/usr/bin
-	#@cp -f sample/fisheye/sample_fisheye $(DESTDIR)/usr/bin
+	@cp -f sample/venc/sample_venc $(DESTDIR)/usr/bin
+	@cp -f sample/venc/sample_vcodec $(DESTDIR)/usr/bin
+	@cp -f sample/vdec/sample_vdec $(DESTDIR)/usr/bin
+	@cp -f sample/ive/sample_* $(DESTDIR)/usr/bin
+	@cp -f sample/ive/ive_stress $(DESTDIR)/usr/bin
+	@cp -f sample/region/sample_region $(DESTDIR)/usr/bin
+	@cp -f sample/vdecvo/sample_vdecvo $(DESTDIR)/usr/bin
+	@cp -f sample/overlay/sample_overlay $(DESTDIR)/usr/bin
+	@cp -f sample/fisheye/sample_fisheye $(DESTDIR)/usr/bin
 endif
 
 ifneq ($(FLASH_SIZE_SHRINK),y)
@@ -83,10 +82,9 @@ endif
 
 ifneq ($(FLASH_SIZE_SHRINK),y)
 	# copy audio libs and elf
-	#@cp -f sample/audio/sample_audio*  $(DESTDIR)/usr/bin
-	#@if [ -e "sample/audio/cvi_mp3player" ]; then cp -f sample/audio/cvi_mp3player $(DESTDIR)/usr/bin; fi
+	@cp -f sample/audio/sample_audio*  $(DESTDIR)/usr/bin
+	@if [ -e "sample/audio/cvi_mp3player" ]; then cp -f sample/audio/cvi_mp3player $(DESTDIR)/usr/bin; fi
 endif
-
 
 	# copy mw lib
 	@cp -a lib/*.so*  $(DESTDIR)/usr/lib

@@ -21,8 +21,8 @@
 	"70 2C 2E 15 10 09 48 33 53 0B 19 18 20 25"
 
 #define HSD20_IPS_GAMMA \
-"70 05 0A 0B 0A 27 2F 44 47 37 14 14 29 2F\n"\
-"70 07 0C 08 08 04 2F 33 46 18 15 15 2B 2D"
+	"D0 05 0A 09 08 05 2E 44 45 0F 17 16 2B 33\n" \
+	"D0 05 0A 09 08 05 2E 43 45 0F 16 16 2B 33"
 
 #define HSD20_IPS 1
 
@@ -82,46 +82,66 @@ enum st7789v_command {
  */
 static int init_display(struct fbtft_par *par)
 {
-	par->fbtftops.reset(par);
-	mdelay(50);
-	// write_reg(par,0x36,0x00);
-	// write_reg(par,0x3A,0x05);
-	// write_reg(par,0xB2,0x0C,0x0C,0x00,0x33,0x33);
-	// write_reg(par,0xB7,0x35);
-	// write_reg(par,0xBB,0x19);
-	// write_reg(par,0xC0,0x2C);
-	// write_reg(par,0xC2,0x01);
-	// write_reg(par,0xC3,0x12);
-	// write_reg(par,0xC4,0x20);
-	// write_reg(par,0xC6,0x0F);
-	// write_reg(par,0xD0,0xA4,0xA1);
-	// write_reg(par,0xE0,0xD0,0x04,0x0D,0x11,0x13,0x2B,0x3F,0x54,0x4C,0x18,0x0D,0x0B,0x1F,0x23);
-	// write_reg(par,0xE1,0xD0,0x04,0x0C,0x11,0x13,0x2C,0x3F,0x44,0x51,0x2F,0x1F,0x1F,0x20,0x23);
-	// write_reg(par,0x21);
-	// write_reg(par,0x11);
-	// mdelay(50);
-	// write_reg(par,0x29);
-	// mdelay(200);
-
-	write_reg(par,0x11);
+	/* turn off sleep mode */
+	write_reg(par, MIPI_DCS_EXIT_SLEEP_MODE);
 	mdelay(120);
-	write_reg(par,0xB2,0x0C,0x0C,0x00,0x33,0x33);
-	write_reg(par,0x35,0x00);
-	write_reg(par,0x36,0x00);
-	write_reg(par,0x3A,0x05);
-	write_reg(par,0xB7,0x35);
-	write_reg(par,0xBB,0x2D);
-	write_reg(par,0xC0,0x2C);
-	write_reg(par,0xC2,0x01);
-	write_reg(par,0xC3,0x15);
-	write_reg(par,0xC4,0x20);
-	write_reg(par,0xC6,0x0F);
-	write_reg(par,0xD0,0xA4,0xA1);
-	write_reg(par,0xE0,0x70,0x05,0x0A,0x0B,0x0A,0x27,0x2F,0x44,0x47,0x37,0x14,0x14,0x29,0x2F);
-	write_reg(par,0xE1,0x70,0x07,0x0C,0x08,0x08,0x04,0x2F,0x33,0x46,0x18,0x15,0x15,0x2B,0x2D);
-	write_reg(par,0x21);
-	write_reg(par,0x29);
-	write_reg(par,0x2C);
+
+	/* set pixel format to RGB-565 */
+	write_reg(par, MIPI_DCS_SET_PIXEL_FORMAT, MIPI_DCS_PIXEL_FMT_16BIT);
+	if (HSD20_IPS)
+		write_reg(par, PORCTRL, 0x05, 0x05, 0x00, 0x33, 0x33);
+
+	else
+		write_reg(par, PORCTRL, 0x08, 0x08, 0x00, 0x22, 0x22);
+
+	/*
+	 * VGH = 13.26V
+	 * VGL = -10.43V
+	 */
+	if (HSD20_IPS)
+		write_reg(par, GCTRL, 0x75);
+	else
+		write_reg(par, GCTRL, 0x35);
+
+	/*
+	 * VDV and VRH register values come from command write
+	 * (instead of NVM)
+	 */
+	write_reg(par, VDVVRHEN, 0x01, 0xFF);
+
+	/*
+	 * VAP =  4.1V + (VCOM + VCOM offset + 0.5 * VDV)
+	 * VAN = -4.1V + (VCOM + VCOM offset + 0.5 * VDV)
+	 */
+	if (HSD20_IPS)
+		write_reg(par, VRHS, 0x13);
+	else
+		write_reg(par, VRHS, 0x0B);
+
+	/* VDV = 0V */
+	write_reg(par, VDVS, 0x20);
+
+	/* VCOM = 0.9V */
+	if (HSD20_IPS)
+		write_reg(par, VCOMS, 0x22);
+	else
+		write_reg(par, VCOMS, 0x20);
+
+	/* VCOM offset = 0V */
+	write_reg(par, VCMOFSET, 0x20);
+
+	/*
+	 * AVDD = 6.8V
+	 * AVCL = -4.8V
+	 * VDS = 2.3V
+	 */
+	write_reg(par, PWCTRL1, 0xA4, 0xA1);
+
+	write_reg(par, MIPI_DCS_SET_DISPLAY_ON);
+
+	if (HSD20_IPS)
+		write_reg(par, MIPI_DCS_ENTER_INVERT_MODE);
+
 	return 0;
 }
 
@@ -233,7 +253,7 @@ static int blank(struct fbtft_par *par, bool on)
 static struct fbtft_display display = {
 	.regwidth = 8,
 	.width = 240,
-	.height = 240,
+	.height = 320,
 	.gamma_num = 2,
 	.gamma_len = 14,
 	.gamma = HSD20_IPS_GAMMA,

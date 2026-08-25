@@ -18,10 +18,7 @@ si10::sysinit:/bin/hostname -F /etc/hostname
 rcS:12345:wait:/etc/init.d/rcS
 
 sole::respawn:/sbin/getty -L console 0 vt100 -l /etc/console_handler.sh
-# acm::respawn:/sbin/getty -L ttyGS0 0 vt100 -l /etc/ttyGS0_handler.sh
-
-# sole::respawn:/bin/sh
-# acm::respawn:/bin/sh
+acm::respawn:/sbin/getty -L ttyGS0 0 vt100 -l /etc/ttyGS0_handler.sh
 
 # Stuff to do for the 3-finger salute
 #ca::ctrlaltdel:/sbin/reboot

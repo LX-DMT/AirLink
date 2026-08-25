@@ -1,0 +1,25 @@
+name: source-check
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install static-check dependencies
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Verify source snapshot
+        run: python3 scripts/verify_source_tree.py
+      - name: Shellcheck AirLink scripts
+        run: shellcheck scripts/*.sh airlink/c906l/build.sh airlink/linux/build_linux.sh airlink/linux/S29airlinkd airlink/rootfs/etc/init.d/S25wifimod
+      - name: IPC and portal tests
+        run: |
+          python3 airlink/c906l/test_protocol.py
+          python3 airlink/linux/test_airlinkd_static.py
+          python3 airlink/linux/test_peer_firmware_contract.py
+          python3 airlink/linux/test_portal_ui.py
+          python3 airlink/linux/test_virtualhere_ready.py

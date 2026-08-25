@@ -1,0 +1,11 @@
+AirLink SG2002
+Copyright 2026 AirLink contributors
+
+AirLink-authored source under airlink/ and AirLink-specific scripts are
+licensed under Apache License 2.0.
+
+This repository is an aggregate distribution containing the SG2002 SDK,
+Linux, U-Boot, Buildroot, OpenSBI, FreeRTOS, LVGL, fonts, vendor drivers,
+firmware and proprietary VirtualHere software. Those components retain their
+original copyright notices and licenses. Apache-2.0 does not replace or
+override their original terms.

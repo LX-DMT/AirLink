@@ -1,0 +1,87 @@
+#!/bin/sh
+DAEMON=/usr/sbin/airlinkd
+CTL=/usr/sbin/airlinkctl
+PIDFILE=/run/airlinkd.pid
+
+signal_managed()
+{
+    signal="$1"
+    matched=1
+    for path in /usr/bin/vhusbdriscv64 /usr/sbin/wpa_supplicant /sbin/udhcpc \
+                /usr/sbin/hostapd /usr/sbin/dnsmasq /usr/sbin/udhcpd; do
+        [ -x "$path" ] || continue
+        if start-stop-daemon -K -q -s "$signal" -x "$path" 2>/dev/null; then
+            matched=0
+        fi
+    done
+    return "$matched"
+}
+
+cleanup_stale()
+{
+    if signal_managed TERM; then
+        sleep 1
+        signal_managed KILL || true
+    fi
+    rm -f /run/udhcpc.wlan0.pid /run/airlink-wpa.conf \
+          /run/airlink/wifi.candidate.conf /run/airlink/hostapd.conf \
+          /run/airlink/dnsmasq.conf
+}
+
+start()
+{
+    printf "Starting airlinkd: "
+    mkdir -p /run /run/airlink /run/wpa_supplicant /data/airlink
+    chmod 0700 /data/airlink
+    if [ -s "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+        echo "already running"
+        return 0
+    fi
+    cleanup_stale
+    rm -f "$PIDFILE" /run/airlinkd.sock
+    start-stop-daemon -S -b -m -p "$PIDFILE" -x "$DAEMON"
+    sleep 1
+    if [ -S /run/airlinkd.sock ] && "$CTL" status >/dev/null 2>&1; then
+        echo "OK"
+        return 0
+    fi
+    echo "FAIL"
+    return 1
+}
+
+stop()
+{
+    printf "Stopping airlinkd: "
+    pid=""
+    [ -s "$PIDFILE" ] && pid="$(cat "$PIDFILE" 2>/dev/null)"
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+        kill -TERM "$pid" 2>/dev/null || true
+        count=0
+        while kill -0 "$pid" 2>/dev/null && [ "$count" -lt 12 ]; do
+            sleep 1
+            count=$((count + 1))
+        done
+        if kill -0 "$pid" 2>/dev/null; then
+            kill -KILL "$pid" 2>/dev/null || true
+            sleep 1
+        fi
+    fi
+    cleanup_stale
+    rm -f "$PIDFILE" /run/airlinkd.sock
+    echo "OK"
+}
+
+case "${1:-}" in
+    start) start ;;
+    stop) stop ;;
+    restart|reload) stop; start ;;
+    status)
+        if [ -S /run/airlinkd.sock ]; then
+            "$CTL" status
+        else
+            echo '{"ok":false,"error":"not-running"}'
+            exit 1
+        fi
+        ;;
+    *) echo "Usage: $0 {start|stop|restart|status}"; exit 2 ;;
+esac

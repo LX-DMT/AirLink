@@ -233,6 +233,7 @@
 		clocks = <&clk CV181X_CLK_SPI>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		bias-pull-up;
 	};
 
 	spi3:spi3@041B0000 {
@@ -242,7 +243,8 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 #if 0
-		dmas = <&dmac 2 1 1 &dmac 3 1 1>;
+		dmas = <&dmac 2 1 1
+			&dmac 3 1 1>;
 		dma-names = "rx", "tx";
 		capability = "txrx";
 #endif
@@ -884,6 +886,13 @@
 		};
 	};
 
+#if 0
+	cvipctrl: pinctrl@3001000 {
+		compatible = "cvitek,pinctrl-cv182x";
+		reg = <0 0x03001000 0 0x1000>;
+	};
+#endif
+
 	cviaudio_core {
 		compatible = "cvitek,audio";
 	};
@@ -897,11 +906,6 @@
 		clock-frequency = <24576000>;
 #endif
 		};
-
-	cvipctrl: pinctrl@3001000 {
-		compatible = "cvitek,pinctrl-cv182x";
-		reg = <0 0x03001000 0 0x1000>;
-	};
 
 
 	aliases {

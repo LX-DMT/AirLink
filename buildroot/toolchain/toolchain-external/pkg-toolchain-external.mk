@@ -453,6 +453,18 @@ define TOOLCHAIN_EXTERNAL_INSTALL_SYSROOT_LIBS
 	$(call copy_toolchain_sysroot,$${SYSROOT_DIR},$${ARCH_SYSROOT_DIR},$${ARCH_SUBDIR},$${ARCH_LIB_DIR},$${SUPPORT_LIB_DIR})
 endef
 
+# The vendor RISC-V GCC advertises fallback lp64d multilib search paths even
+# when the selected C906/XThead libraries are copied into the flat Buildroot
+# staging sysroot. Autoconf canonicalises every advertised directory and
+# otherwise prints misleading missing-directory diagnostics for these unused
+# fallback paths. Keep the directories empty: they only make the GCC search
+# path structurally complete and do not change library selection.
+define TOOLCHAIN_EXTERNAL_CREATE_STAGING_COMPAT_MULTILIB_DIRS
+	$(Q)mkdir -p \
+		$(STAGING_DIR)/usr/lib/lp64d \
+		$(STAGING_DIR)/usr/lib/lib64/lp64d
+endef
+
 # Create a symlink from (usr/)$(ARCH_LIB_DIR) to lib.
 # Note: the skeleton package additionally creates lib32->lib or lib64->lib
 # (as appropriate)
@@ -599,6 +611,7 @@ define $(2)_INSTALL_STAGING_CMDS
 	$$(TOOLCHAIN_WRAPPER_INSTALL)
 	$$(TOOLCHAIN_EXTERNAL_CREATE_STAGING_LIB_SYMLINK)
 	$$(TOOLCHAIN_EXTERNAL_INSTALL_SYSROOT_LIBS)
+	$$(TOOLCHAIN_EXTERNAL_CREATE_STAGING_COMPAT_MULTILIB_DIRS)
 	$$(TOOLCHAIN_EXTERNAL_INSTALL_WRAPPER)
 	$$(TOOLCHAIN_EXTERNAL_INSTALL_GDBINIT)
 	$$(TOOLCHAIN_EXTERNAL_FIXUP_PRETTY_PRINTER_LOADER)

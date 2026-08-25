@@ -1,0 +1,9 @@
+VirtualHere USB Server for Linux
+Source: https://www.virtualhere.com/usb_server_software
+Bundled file: usr/bin/vhusbdriscv64
+SHA256: 5a03e6dd928fa46b0aec1494919c42b67835cd2c2d3e3a5d27a563499b5b720c
+
+VirtualHere is proprietary software and is not licensed under Apache-2.0.
+Its embedded license permits no-charge use for sharing one USB device, and
+also includes restrictions on modification, reverse engineering, derivative
+works, resale, transfer of rights and removal of proprietary notices.
