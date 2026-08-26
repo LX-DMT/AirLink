@@ -20,6 +20,7 @@ struct airlink_scan_network {
     int32_t rssi_dbm;
     uint32_t frequency_mhz;
     uint32_t secured;
+    uint32_t security_known;
 };
 
 struct airlink_http_client {

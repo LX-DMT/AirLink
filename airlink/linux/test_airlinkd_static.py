@@ -119,6 +119,13 @@ checks = {
     "failed candidate restores AP": "restore_provision_ap" in service and "airlink_provision_restart_ap" in daemon,
     "manual timeout": "airlink_provision_take_timeout" in service,
     "async scan": "scan_pid" in pheader and "scan_start" in provision and "WNOHANG" in provision,
+    "scan security from iw privacy": all(x in provision for x in
+        ("scan_parse_security", "\"capability:\"", "\"Privacy\"",
+         "\"RSN:\"", "\"WPA:\"", "\"WEP:\"")),
+    "unknown scan security is safe": "if (!network->security_known)" in provision and
+                                     "network->secured = 1U;" in provision and
+                                     "security_known" in pheader,
+    "duplicate SSID preserves security": "stored->secured || network->secured" in provision,
     "HTTP limits": "AIRLINK_PROVISION_MAX_CLIENTS 4" in pheader
                    and "AIRLINK_PROVISION_BODY_MAX" in provision,
     "captive redirect": 'Location: http://' in provision and 'APIP' in provision,

@@ -35,6 +35,7 @@ python3 "$script_dir/inspect_fip.py" "$work/boot/fip.bin"     --json-out "$relea
 python3 - "$release/fip-components.json" "$root/out/components/c906l/r26-lvgl.bin" \
     "$work/boot/fip.bin" <<'PY'
 import json
+import lzma
 import sys
 
 report = json.load(open(sys.argv[1], encoding="utf-8"))
@@ -62,6 +63,26 @@ if actual.get("run_address") != 0x8FE00000:
     raise SystemExit(
         f"BLCP_2ND run address mismatch: {actual.get('run_address')!r}"
     )
+loader = items.get("LOADER_2ND")
+if not loader or not loader.get("present"):
+    raise SystemExit("LOADER_2ND is missing from release FIP")
+loader_offset = loader.get("offset")
+loader_size = loader.get("size")
+if not isinstance(loader_offset, int) or not isinstance(loader_size, int):
+    raise SystemExit("LOADER_2ND offset/size is invalid")
+loader_image = fip[loader_offset:loader_offset + loader_size]
+if loader_image[4:8] != b"B3MA":
+    raise SystemExit("LOADER_2ND is not the expected LZMA image")
+try:
+    decoder = lzma.LZMADecompressor(format=lzma.FORMAT_ALONE)
+    uboot = decoder.decompress(loader_image[32:])
+except lzma.LZMAError as exc:
+    raise SystemExit(f"LOADER_2ND decompression failed: {exc}") from exc
+for marker in (b"cvi_vo_probe", b"zct2133v1", b"showlogo="):
+    if marker in uboot:
+        raise SystemExit(
+            f"U-Boot still contains display-owner conflict marker: {marker!r}"
+        )
 PY
 python3 "$script_dir/extract_fit_property.py" "$work/boot/boot.sd"     /images/kernel-1 data "$work/boot/kernel.bin" >/dev/null
 python3 "$script_dir/extract_fit_property.py" "$work/boot/boot.sd"     /images/ramdisk-1 data "$work/boot/ramdisk.bin" >/dev/null
@@ -70,6 +91,23 @@ python3 "$script_dir/extract_fit_property.py" "$work/boot/boot.sd"     /images/f
 [ "$(fdtget -t s "$work/boot/kernel.dtb" /spi0@04180000 status)" = disabled ]
 [ "$(fdtget -t s "$work/boot/kernel.dtb" /i2c@04040000 status)" = disabled ]
 [ "$(fdtget -t s "$work/boot/kernel.dtb" /saradc status)" = disabled ]
+[ "$(fdtget -t s "$work/boot/kernel.dtb" /mipi_tx status)" = disabled ]
+[ "$(fdtget -t s "$work/boot/kernel.dtb" /vo status)" = disabled ]
+for node in \
+    /pwm@3060000 /pwm@3061000 /pwm@3062000 \
+    /serial@04150000 /serial@04160000 /serial@04170000 \
+    /i2c@04000000 /i2c@04010000 /i2c@04020000 /i2c@04030000 \
+    /dac@0300A000 /cif
+do
+    [ "$(fdtget -t s "$work/boot/kernel.dtb" "$node" status)" = disabled ] ||
+        die "Linux ownership node is not disabled: $node"
+done
+if fdtget "$work/boot/kernel.dtb" /spi4@gpio compatible >/dev/null 2>&1; then
+    die "legacy spi4-gpio node remains"
+fi
+if fdtget "$work/boot/kernel.dtb" /i2c5@gpio compatible >/dev/null 2>&1; then
+    die "legacy i2c5-gpio node remains"
+fi
 
 dd if="$image" of="$work/rootfs/rootfs.ext4" bs=4M skip=16777728     iflag=skip_bytes,count_bytes count=1677721600 status=none
 e2fsck -fn "$work/rootfs/rootfs.ext4" > "$release/e2fsck.txt" 2>&1 || {
@@ -90,7 +128,24 @@ dump /usr/sbin/airlinkd "$work/rootfs/airlinkd"
 dump /usr/sbin/airlinkctl "$work/rootfs/airlinkctl"
 dump /usr/bin/vhusbdriscv64 "$work/rootfs/vhusbdriscv64"
 dump /mnt/system/ko/3rd/aic8800_bsp.ko "$work/rootfs/aic8800_bsp.ko"
+dump /mnt/system/ko/3rd/aic8800_fdrv.ko "$work/rootfs/aic8800_fdrv.ko"
+[ -s "$work/rootfs/aic8800_fdrv.ko" ] || die "AIC8800 fdrv image readback missing"
 dump /etc/airlink-release "$work/rootfs/airlink-release"
+
+firmware_base=/usr/lib/firmware/aic8800_sdio
+firmware_link_stat="$(debugfs -R "stat $firmware_base/aic8800" \
+    "$work/rootfs/rootfs.ext4" 2>&1)"
+printf '%s\n' "$firmware_link_stat" | grep -F 'aic8800_and_aic8800D80' >/dev/null ||
+    die "AIC8800 compatibility firmware symlink missing from final image"
+mkdir -p "$work/rootfs/aic8800-firmware"
+for name in aic_userconfig.txt fmacfw.bin fw_adid_u03.bin fw_patch_u03.bin \
+    fw_patch_table_u03.bin; do
+    output="$work/rootfs/aic8800-firmware/$name"
+    rm -f -- "$output"
+    dump "$firmware_base/aic8800/$name" "$output"
+    [ -s "$output" ] ||
+        die "AIC8800 firmware is not readable through compatibility path: $name"
+done
 
 cmp -s "$work/rootfs/airlinkd" "$root/out/components/linux/airlinkd" ||
     die "airlinkd image readback mismatch"
@@ -100,6 +155,9 @@ cmp -s "$work/rootfs/airlinkctl" "$root/out/components/linux/airlinkctl" ||
     die "VirtualHere image readback mismatch"
 strings "$work/rootfs/aic8800_bsp.ko" | grep -F 'SDIO clock transition done:' >/dev/null ||
     die "AIC8800 50 MHz transition marker missing"
+if strings "$work/rootfs/aic8800_fdrv.ko" | grep -F 'btsdio_init' >/dev/null; then
+    die "AIC8800 fdrv unexpectedly includes SDIO Bluetooth"
+fi
 
 for banned in /usr/sbin/sshd /usr/bin/ssh /usr/bin/telnet /usr/sbin/telnetd     /usr/sbin/dropbear /usr/sbin/dropbearmulti /usr/bin/adbd /bin/adbd /sbin/adbd     /etc/init.d/S50sshd /etc/ssh/sshd_config /etc/dropbear; do
     missing "$banned" || die "release-banned path remains: $banned"

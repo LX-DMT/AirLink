@@ -107,8 +107,48 @@ static int creds(struct airlink_provision_ctx *c)
     wipe(stored_password, sizeof(stored_password));
     return 0;
 }
-static void addnet(struct airlink_provision_ctx*c,struct airlink_scan_network*n){if(!n->ssid[0])return;for(unsigned i=0;i<c->network_count;i++)if(!strcmp(c->networks[i].ssid,n->ssid)){if(n->rssi_dbm>c->networks[i].rssi_dbm)c->networks[i]=*n;return;}if(c->network_count<AIRLINK_PROVISION_MAX_NETWORKS)c->networks[c->network_count++]=*n;}
+static void addnet(struct airlink_provision_ctx *c,
+                   struct airlink_scan_network *network)
+{
+    if (!network->ssid[0])
+        return;
+    if (!network->security_known)
+        network->secured = 1U;
+    for (unsigned i = 0; i < c->network_count; ++i) {
+        struct airlink_scan_network *stored = &c->networks[i];
+        uint32_t secured;
+        uint32_t security_known;
+
+        if (strcmp(stored->ssid, network->ssid) != 0)
+            continue;
+        secured = stored->secured || network->secured;
+        security_known = stored->security_known || network->security_known;
+        if (network->rssi_dbm > stored->rssi_dbm)
+            *stored = *network;
+        stored->secured = secured;
+        stored->security_known = security_known;
+        return;
+    }
+    if (c->network_count < AIRLINK_PROVISION_MAX_NETWORKS)
+        c->networks[c->network_count++] = *network;
+}
 static int cmpnet(const void*a,const void*b){return((const struct airlink_scan_network*)b)->rssi_dbm-((const struct airlink_scan_network*)a)->rssi_dbm;}
+
+static void scan_parse_security(struct airlink_scan_network *network,
+                                const char *line)
+{
+    if (!strncmp(line, "capability:", 11)) {
+        network->security_known = 1U;
+        if (strstr(line + 11, "Privacy") != NULL)
+            network->secured = 1U;
+    } else if (!strncmp(line, "RSN:", 4) ||
+               !strncmp(line, "WPA:", 4) ||
+               !strncmp(line, "WEP:", 4)) {
+        network->security_known = 1U;
+        network->secured = 1U;
+    }
+}
+
 static void scan_parse(struct airlink_provision_ctx *c)
 {
     FILE *file = fopen(SCANOUT, "r");
@@ -144,9 +184,8 @@ static void scan_parse(struct airlink_provision_ctx *c)
                 ++cursor;
             if (strlen(cursor) <= 32U)
                 copy_text(network.ssid, sizeof(network.ssid), cursor);
-        } else if (!strncmp(cursor, "RSN:", 4) ||
-                   !strncmp(cursor, "WPA:", 4)) {
-            network.secured = 1U;
+        } else {
+            scan_parse_security(&network, cursor);
         }
     }
     fclose(file);
@@ -445,6 +484,7 @@ int airlink_provision_selftest(void)
     char ascii32[33];
     char ascii33[34];
     char hex_password[65];
+    struct airlink_scan_network security;
 
     memset(ascii32, 'A', sizeof(ascii32) - 1U);
     ascii32[sizeof(ascii32) - 1U] = 0;
@@ -476,5 +516,30 @@ int airlink_provision_selftest(void)
         !ap_credentials_match("AirLink-1234", FIXED_AP_PASSWORD,
                               "AirLink-1234"))
         return 6;
+    memset(&security, 0, sizeof(security));
+    scan_parse_security(&security,
+                        "capability: ESS Privacy ShortSlotTime (0x0411)");
+    if (!security.security_known || !security.secured)
+        return 7;
+    memset(&security, 0, sizeof(security));
+    scan_parse_security(&security,
+                        "capability: ESS ShortSlotTime (0x0401)");
+    if (!security.security_known || security.secured)
+        return 8;
+    memset(&security, 0, sizeof(security));
+    scan_parse_security(&security, "RSN:");
+    if (!security.security_known || !security.secured)
+        return 9;
+    memset(&security, 0, sizeof(security));
+    copy_text(security.ssid, sizeof(security.ssid), "UnknownSecurity");
+    security.rssi_dbm = -50;
+    {
+        struct airlink_provision_ctx scan_context;
+        memset(&scan_context, 0, sizeof(scan_context));
+        addnet(&scan_context, &security);
+        if (scan_context.network_count != 1U ||
+            !scan_context.networks[0].secured)
+            return 10;
+    }
     return 0;
 }

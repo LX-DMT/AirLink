@@ -79,6 +79,20 @@ strings "$bsp" | grep -F 'SDIO clock transition done:' >/dev/null ||
     die "staged AIC8800 BSP lacks high-speed transition"
 strings "$bsp" | grep -F '/usr/lib/firmware/aic8800_sdio/aic8800' >/dev/null ||
     die "staged AIC8800 firmware path mismatch"
+firmware_root="$work/rootfs/usr/lib/firmware/aic8800_sdio"
+firmware_compat="$firmware_root/aic8800"
+firmware_target="$firmware_root/aic8800_and_aic8800D80"
+[ -L "$firmware_compat" ] ||
+    die "staged AIC8800 compatibility firmware path is not a symlink"
+[ -d "$firmware_target" ] ||
+    die "staged AIC8800 firmware target directory missing"
+[ "$(readlink -f "$firmware_compat")" = "$(readlink -f "$firmware_target")" ] ||
+    die "staged AIC8800 compatibility firmware path resolves incorrectly"
+for name in aic_userconfig.txt fmacfw.bin fw_adid_u03.bin fw_patch_u03.bin \
+    fw_patch_table_u03.bin; do
+    [ -s "$firmware_compat/$name" ] ||
+        die "staged AIC8800 firmware missing or empty: $firmware_compat/$name"
+done
 
 python3 "$root/fsbl/plat/cv181x/fiptool.py" genfip     --OLD_FIP "$sdk/fip.bin"     --BLCP_2ND "$components/c906l/r26-lvgl.bin"     --BLCP_2ND_RUNADDR 0x8fe00000     "$work/fip/fip.bin"
 cp "$sdk/rawimages/boot.sd" "$work/boot.sd"

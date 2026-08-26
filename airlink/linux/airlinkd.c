@@ -39,8 +39,9 @@
 #define WPA_RUN_CONF "/run/airlink-wpa.conf"
 #define WPA_CTRL_DIR "/run/wpa_supplicant"
 #define VH_PATH "/usr/bin/vhusbdriscv64"
-#define VH_CONFIG_PATH "/run/airlink/vhusbd.ini"
-#define VH_CONFIG_TEMP "/run/airlink/vhusbd.ini.tmp"
+#define VH_CONFIG_DIR "/data/airlink"
+#define VH_CONFIG_PATH "/data/airlink/vhusbd.ini"
+#define VH_CONFIG_TEMP "/data/airlink/vhusbd.ini.tmp"
 #define VH_LOG_PATH "/tmp/vhusbd.log"
 #define VH_TCP_PORT 7575U
 #define VH_START_TIMEOUT_MS 8000ULL
@@ -698,8 +699,24 @@ static uint32_t update_virtualhere_client_state(struct daemon_ctx *ctx,
 
 static bool write_virtualhere_config(void)
 {
-    FILE *file = fopen(VH_CONFIG_TEMP, "w");
+    struct stat status;
+    FILE *file;
     int fd;
+    int dirfd;
+
+    if (stat(VH_CONFIG_PATH, &status) == 0) {
+        if (!S_ISREG(status.st_mode) || status.st_size == 0)
+            return false;
+        (void)chmod(VH_CONFIG_PATH, 0600);
+        log_msg("VirtualHere config=PERSISTENT path=%s bytes=%llu preserve=YES",
+                VH_CONFIG_PATH, (unsigned long long)status.st_size);
+        return true;
+    }
+    if (errno != ENOENT)
+        return false;
+    if (mkdir(VH_CONFIG_DIR, 0700) != 0 && errno != EEXIST)
+        return false;
+    file = fopen(VH_CONFIG_TEMP, "w");
     if (!file)
         return false;
     if (fprintf(file, "[General]\nServerName=AirLink\n") < 0 ||
@@ -709,7 +726,7 @@ static bool write_virtualhere_config(void)
         return false;
     }
     fd = fileno(file);
-    if (fd < 0 || fsync(fd) != 0) {
+    if (fd < 0 || fchmod(fd, 0600) != 0 || fsync(fd) != 0) {
         fclose(file);
         unlink(VH_CONFIG_TEMP);
         return false;
@@ -722,6 +739,13 @@ static bool write_virtualhere_config(void)
         unlink(VH_CONFIG_TEMP);
         return false;
     }
+    dirfd = open(VH_CONFIG_DIR, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    if (dirfd >= 0) {
+        (void)fsync(dirfd);
+        close(dirfd);
+    }
+    log_msg("VirtualHere config=PERSISTENT path=%s created=YES mode=0600",
+            VH_CONFIG_PATH);
     return true;
 }
 

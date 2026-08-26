@@ -12,6 +12,7 @@ AIC8800_SDIO_FIRMWARE_REDISTRIBUTE = NO
 define AIC8800_SDIO_FIRMWARE_INSTALL_TARGET_CMDS
 	mkdir -pv $(TARGET_DIR)/usr/lib/firmware/aic8800_sdio/
 	rsync -r --verbose --copy-dirlinks --copy-links --hard-links ${@D}/* $(TARGET_DIR)/usr/lib/firmware/aic8800_sdio/
+	ln -sfn aic8800_and_aic8800D80 $(TARGET_DIR)/usr/lib/firmware/aic8800_sdio/aic8800
 endef
 
 $(eval $(generic-package))

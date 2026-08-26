@@ -8,7 +8,7 @@
 #include <dt-bindings/gpio/gpio.h>
 
 &i2c0 {
-        status = "okay";
+        status = "disabled";
         /delete-property/ scl-pinmux;
         /delete-property/ sda-pinmux;
         /delete-property/ scl-gpios;
@@ -16,7 +16,7 @@
 };
 
 &i2c1 {
-        status = "okay";
+        status = "disabled";
         /delete-property/ scl-pinmux;
         /delete-property/ sda-pinmux;
         /delete-property/ scl-gpios;
@@ -33,28 +33,32 @@
 
 &cvi_vo {
 #ifndef __UBOOT__
+	status = "disabled";
 	/delete-property/ reset-gpio;
 	/delete-property/ pwm-gpio;
 #else
-	// for uboot
+	status = "okay";
         reset-gpio = <&porte 0 1>;
         pwm-gpio = <&porte 2 1>;
 #endif
         /delete-property/ power-ct-gpio;
-
 };
 
 &mipi_tx {
 #ifndef __UBOOT__
-	// for linux kernel
-        reset-gpio = <&porte 0 1>;
-        pwm-gpio = <&porte 2 1>;
+	/*
+	 * C906L owns the four MIPI_TX data pins as SPI0 for GC9A01.
+	 * Linux must never probe MIPI TX or rewrite that pinmux.
+	 */
+	status = "disabled";
+	/delete-property/ reset-gpio;
+	/delete-property/ pwm-gpio;
 #else
+	status = "okay";
         /delete-property/ reset-gpio;
         /delete-property/ pwm-gpio;
 #endif
         /delete-property/ power-ct-gpio;
-        status = "okay";
 };
 
 &uart0 {
@@ -65,31 +69,31 @@
 &uart1 {
         clocks = <&clk CV181X_CLK_UART1>;
         /delete-property/ clock-frequency;
-        status = "okay";
+        status = "disabled";
 };
 
 &uart2 {
         clocks = <&clk CV181X_CLK_UART2>;
         /delete-property/ clock-frequency;
-        status = "okay";
+        status = "disabled";
 };
 
 &uart3 {
         clocks = <&clk CV181X_CLK_UART3>;
         /delete-property/ clock-frequency;
-	status = "okay";
+	status = "disabled";
 };
 
 &pwm0 {
-        status = "okay";
+        status = "disabled";
 };
 
 &pwm1 {
-      status = "okay";
+      status = "disabled";
 };
 
 &pwm2 {
-      status = "okay";
+      status = "disabled";
 };
 
 &i2c2 {
@@ -101,7 +105,7 @@
 };
 
 &i2c3 {
-        status = "okay";
+        status = "disabled";
         /delete-property/ scl-pinmux;
         /delete-property/ sda-pinmux;
         /delete-property/ scl-gpios;
@@ -144,6 +148,24 @@
  */
 &spi0 {
 	status = "disabled";
+	/delete-node/ spidev@0;
+
+	gc9a01@0 {
+		compatible = "galaxycore,gc9a01";
+		reg = <0>;
+		status = "disabled";
+		spi-max-frequency = <80000000>;
+		spi-cpol;
+		spi-cpha;
+		rotate = <270>;
+		fps = <60>;
+		bgr;
+		buswidth = <8>;
+		width = <240>;
+		height = <240>;
+		reset = <&porta 27 GPIO_ACTIVE_HIGH>;
+		dc = <&porta 15 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &spi1 {
@@ -184,7 +206,7 @@
 };
 
 &dac {
-        status = "okay";
+        status = "disabled";
         /delete-property/ mute-gpio-r;
 };
 
@@ -197,34 +219,13 @@
 };
 
 &mipi_rx {
-        snsr-reset = <&porte 1 GPIO_ACTIVE_LOW>;
+	status = "disabled";
+	/delete-property/ snsr-reset;
 };
 
 / {
         model = "LicheeRv Nano";
 
-	spi4: spi4@gpio {
-		compatible = "spi-gpio";
-		sck-gpio = <&porta 22 0>;
-		miso-gpio = <&porta 23 0>;
-		mosi-gpio = <&porta 25 0>;
-		cs-gpio = <&porta 24 GPIO_ACTIVE_LOW>;
-		num-chipselects = <1>;
-		status = "okay";
-
-		spidev@0 {
-			compatible = "spidev";
-			reg = <0>;
-		};
-	};
-
-	i2c5: i2c5@gpio {
-		compatible = "i2c-gpio";
-                scl-gpios = <&porta 15 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-                sda-gpios = <&porta 27 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-                i2c-gpio,delay-us = <5>;
-                status = "okay";
-	};
 
         gpio-keys {
                 compatible = "gpio-keys";

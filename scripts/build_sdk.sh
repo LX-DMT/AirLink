@@ -18,6 +18,9 @@ log="$log_dir/sdk-build.log"
     # Buildroot rejects WSL interop PATH entries such as /mnt/c/Program Files.
     # Use a deterministic Linux base PATH; cvisetup appends repository toolchains.
     export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    # The round GC9A01 display is owned by C906L from power-on. U-Boot must not
+    # initialize its unrelated MIPI panel/boot-logo path or rewrite display pinmux.
+    export ENABLE_BOOTLOGO=0
     # Vendor SDK setup and build functions intentionally use optional unset
     # environment variables, so nounset cannot remain enabled in this subshell.
     set +u
@@ -64,5 +67,20 @@ done
 strings "$sdk_rootfs/mnt/system/ko/3rd/aic8800_bsp.ko" |
     grep -F 'SDIO clock transition done:' >/dev/null ||
     die "SDK did not build the integrated 50 MHz AIC8800 BSP"
+
+firmware_root="$sdk_rootfs/usr/lib/firmware/aic8800_sdio"
+firmware_compat="$firmware_root/aic8800"
+firmware_target="$firmware_root/aic8800_and_aic8800D80"
+[ -L "$firmware_compat" ] ||
+    die "AIC8800 compatibility firmware path is not a symlink: $firmware_compat"
+[ -d "$firmware_target" ] ||
+    die "AIC8800 firmware target directory missing: $firmware_target"
+[ "$(readlink -f "$firmware_compat")" = "$(readlink -f "$firmware_target")" ] ||
+    die "AIC8800 compatibility firmware path resolves to the wrong directory"
+for name in aic_userconfig.txt fmacfw.bin fw_adid_u03.bin fw_patch_u03.bin \
+    fw_patch_table_u03.bin; do
+    [ -s "$firmware_compat/$name" ] ||
+        die "AIC8800 required firmware missing or empty: $firmware_compat/$name"
+done
 
 printf 'AirLink SG2002 SDK build: PASS\n'

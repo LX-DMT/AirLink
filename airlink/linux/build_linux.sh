@@ -12,6 +12,8 @@ mkdir -p "$out/generated"
 portal="$script_dir/../portal/index.html"
 python3 "$script_dir/test_portal_ui.py"
 python3 "$script_dir/test_virtualhere_ready.py"
+python3 "$script_dir/test_virtualhere_persistence.py"
+python3 "$script_dir/test_wifi_scan_security.py"
 python3 "$script_dir/embed_portal.py" "$portal"     "$out/generated/airlink_portal.inc"
 common=(-std=c11 -Os -static -ffunction-sections -fdata-sections -fno-common -Wall -Wextra -Werror '-Wl,--gc-sections' -I"$script_dir/../ipc" -I"$out/generated")
 "$cc" "${common[@]}" "$script_dir/airlinkd.c" "$script_dir/airlink_provision.c" -o "$out/airlinkd"

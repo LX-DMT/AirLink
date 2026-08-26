@@ -15,6 +15,7 @@ required = [
     "airlink/ipc/airlink_ipc_v4.h", "airlink/portal/index.html",
     "airlink/rootfs/usr/bin/vhusbdriscv64",
     "airlink/rootfs/etc/init.d/S25wifimod",
+    "buildroot/package/aic8800-sdio-firmware/aic8800-sdio-firmware.mk",
     "build/cvisetup.sh", "linux_5.10/Makefile",
     "osdrv/interdrv/v2/jpeg/mars/soph_jpeg.ko",
     "osdrv/interdrv/v2/jpeg/mars_arm/soph_jpeg.ko",
@@ -112,11 +113,73 @@ if vh.exists():
         errors.append(f"VirtualHere SHA256 mismatch: {digest}")
 
 dts = (root / required[-1]).read_text(encoding="utf-8")
-for marker in ('&spi0 {\n\tstatus = "disabled";',
-               '&i2c4 {\n        status = "disabled";',
-               '&{/saradc} {\n        status = "disabled";'):
+for marker in (
+    '&spi0 {',
+    '&i2c4 {',
+    '&{/saradc} {',
+    '&mipi_tx {',
+    '&cvi_vo {',
+):
     if marker not in dts:
         errors.append(f"final DTB ownership marker missing: {marker}")
+for node in ("spi4: spi4@gpio", "i2c5: i2c5@gpio"):
+    if node in dts:
+        errors.append(f"legacy GPIO bus still enabled: {node}")
+
+disabled_nodes = (
+    "i2c0", "i2c1", "i2c2", "i2c3", "i2c4",
+    "uart1", "uart2", "uart3",
+    "pwm0", "pwm1", "pwm2",
+    "spi0", "dac", "mipi_rx",
+)
+for node in disabled_nodes:
+    pattern = rf"&{re.escape(node)}\s*\{{.*?status\s*=\s*\"disabled\";"
+    if not re.search(pattern, dts, re.S):
+        errors.append(f"Linux ownership node is not disabled: {node}")
+for node in ("mipi_tx", "cvi_vo"):
+    pattern = (
+        rf"&{node}\s*\{{.*?#ifndef __UBOOT__.*?"
+        rf"status\s*=\s*\"disabled\";"
+    )
+    if not re.search(pattern, dts, re.S):
+        errors.append(f"Linux display conflict is not disabled: {node}")
+
+board_defconfig = (
+    root / "build/boards/sg200x/sg2002_licheervnano_sd/sg2002_licheervnano_sd_defconfig"
+).read_text(encoding="utf-8")
+if "CONFIG_MIPI_PANEL_ZCT2133V1=y" in board_defconfig:
+    errors.append("U-Boot MIPI panel must remain disabled; C906L owns the round display")
+
+uboot_defconfig = (
+    root / "build/boards/sg200x/sg2002_licheervnano_sd/u-boot/sg2002_licheervnano_sd_defconfig"
+).read_text(encoding="utf-8")
+for option in (
+    "CONFIG_DISPLAY=y",
+    "CONFIG_DM_VIDEO=y",
+    "CONFIG_VIDEO_CVITEK=y",
+    "CONFIG_DISPLAY_CVITEK_MIPI=y",
+    "CONFIG_BOOTLOGO=y",
+    "CONFIG_CMD_CVI_VO=y",
+):
+    if option in uboot_defconfig:
+        errors.append(f"U-Boot display ownership option must remain disabled: {option}")
+
+fdrv_makefile = (
+    root / "osdrv/extdrv/wireless/aic8800/aic8800_fdrv/Makefile"
+).read_text(encoding="utf-8")
+if not re.search(r"^CONFIG_SDIO_BT\s*=\s*n\s*$", fdrv_makefile, re.M):
+    errors.append("AIC8800 fdrv must keep CONFIG_SDIO_BT=n")
+
+firmware_makefile = (
+    root / "buildroot/package/aic8800-sdio-firmware/aic8800-sdio-firmware.mk"
+).read_text(encoding="utf-8")
+firmware_link = re.compile(
+    r"^[ \t]*ln\s+-sfn\s+aic8800_and_aic8800D80\s+"
+    r"\$\(TARGET_DIR\)/usr/lib/firmware/aic8800_sdio/aic8800[ \t]*$",
+    re.M,
+)
+if not firmware_link.search(firmware_makefile):
+    errors.append("AIC8800 firmware compatibility symlink install rule missing")
 
 if errors:
     print("\n".join("ERROR: " + item for item in errors), file=sys.stderr)
